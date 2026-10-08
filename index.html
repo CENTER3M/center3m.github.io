@@ -745,7 +745,7 @@ function adminCount(){return (S.users||[]).filter(function(u){return u.role==='a
 function pUpload(){
   var h='<h3>رفع شيت الحضور والغياب (Excel أو PDF)</h3>'+
   '<p class="hint">ارفع الشيت زي ما هو. الموقع بيدوّر على كود الطالب في كل سطر ويسجّل حالته. الأيام اللي اتسجلت قبل كده بتفضل محفوظة، والشيت الجديد بيتضاف عليها.</p>'+
-  '<div class="row"><div class="field" style="flex:2 1 240px"><label for="upFile">ملف الحضور</label><input type="file" id="upFile" accept=".xlsx,.xls,.csv,.pdf"></div>'+
+  '<div class="row"><div class="field" style="flex:2 1 240px"><label for="upFile">ملف الحضور (ممكن تختار كذا ملف مع بعض)</label><input type="file" id="upFile" accept=".xlsx,.xls,.csv,.pdf" multiple></div>'+
   '<div class="field"><label for="upDate">تاريخ اليوم (لو الشيت ليوم واحد)</label><input type="date" id="upDate" value="'+(up.date||today())+'"></div></div>'+
   '<div class="row"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="upAddNew" '+(up.addNew===false?'':'checked')+'> ضيف أي طالب جديد مش موجود (بالاسم والكود اللي في الشيت)</label>'+
   '<div class="field" style="flex:0 1 220px"><label for="upGrade">المرحلة</label><select id="upGrade"><option value="">اختار المرحلة</option>'+(S.grades||[]).map(function(g){return '<option'+(g===up.grade?' selected':'')+'>'+esc(g)+'</option>'}).join('')+'</select></div></div>';
@@ -757,6 +757,7 @@ function pUpload(){
   '<span><b>قائمة الحاضرين بس:</b> لو الشيت فيه الكود والاسم من غير عمود حالة، كل اللي فيه بيتسجلوا حاضرين في التاريخ اللي فوق.</span>'+
   '<span>ينفع تكتب الحالة: حاضر، ح، ✓، 1 · غائب، غ، ✗، 0 · متأخر، م · بعذر، عذر · مطرود، طرد، ط. ولو الشيت فيه قسم بعنوان "المطرودين" اللي تحته بيتسجلوا "تم طرده من الحصة".</span></div></details>';
   if(up.status==='loading')h+='<div class="msg info">جاري قراءة الملف…</div>';
+  if(up.status==='batch')h+=batchHtml();
   if(up.status==='error')h+='<div class="msg err">'+esc(up.msg)+'</div>';
   if(up.status==='preview'&&up.res)h+=previewHtml(up.res);
   var log=(S.uploads||[]).slice(0,8);
@@ -943,12 +944,10 @@ function resolveUpload(){
 function loadScript(src,check){if(check())return Promise.resolve();return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=function(){res()};s.onerror=function(){rej(new Error('lib'))};document.head.appendChild(s)})}
 var XLSX_URL='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 var PDF_URL='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',PDFW_URL='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-function readFile(file){
-  up.file=file.name;up.status='loading';up.res=null;up.gradeTouched=false;
-  var fm=digits(file.name).match(/(\d{1,2})[-.](\d{1,2})(?:[-.](\d{2,4}))?/);if(fm){var fy=fm[3]?(+fm[3]<100?2000+ +fm[3]:+fm[3]):new Date().getFullYear();var fd=ymd(fy,+fm[2],+fm[1]);if(fd)up.date=fd}
-  render();
+function fileDate(name){var fm=digits(name).match(/(\d{1,2})[-.](\d{1,2})(?:[-.](\d{2,4}))?/);if(!fm)return '';var fy=fm[3]?(+fm[3]<100?2000+ +fm[3]:+fm[3]):new Date().getFullYear();return ymd(fy,+fm[2],+fm[1])||''}
+function parseFile(file){
   var isPdf=/\.pdf$/i.test(file.name)||file.type==='application/pdf';
-  file.arrayBuffer().then(function(buf){
+  return file.arrayBuffer().then(function(buf){
     if(isPdf){
       return loadScript(PDF_URL,function(){return window.pdfjsLib||window['pdfjs-dist/build/pdf']}).then(function(){return loadScript(PDFW_URL,function(){return window.pdfjsWorker})}).then(function(){
         var lib=window.pdfjsLib||window['pdfjs-dist/build/pdf'];try{lib.GlobalWorkerOptions.workerSrc=PDFW_URL}catch(x){}
@@ -971,22 +970,69 @@ function readFile(file){
       var wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true});
       up.kind='sheet';up.rows=wb.SheetNames.map(function(n){return XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''})});
     });
-  }).then(function(){resolveUpload();render()}).catch(function(err){
-    up.status='error';up.msg=(err&&err.user)||(err&&err.message==='lib'?'مقدرتش أحمّل أداة قراءة الملفات. اتأكد من النت وجرب تاني.':'مقدرتش أقرا الملف ده. اتأكد إنه Excel أو PDF سليم.');render();
   });
+}
+function errText(err){return (err&&err.user)||(err&&err.message==='lib'?'مقدرتش أحمّل أداة قراءة الملفات. اتأكد من النت وجرب تاني.':'مقدرتش أقرا الملف ده. اتأكد إنه Excel أو PDF سليم.')}
+function readFile(file){
+  up.file=file.name;up.status='loading';up.res=null;up.gradeTouched=false;up.batch=null;
+  var fd=fileDate(file.name);if(fd)up.date=fd;
+  render();
+  parseFile(file).then(function(){resolveUpload();render()}).catch(function(err){up.status='error';up.msg=errText(err);render()});
+}
+/* several files at once: read each, show one summary, save all together */
+function readMany(files){
+  var baseDate=up.date||today(),baseGrade=up.gradeTouched?up.grade:'';
+  var b={items:[],total:files.length,done:0,running:true,baseDate:baseDate,baseGrade:baseGrade};
+  up.batch=b;up.status='batch';up.res=null;render();
+  var i=0;
+  (function next(){
+    if(i>=files.length){b.running=false;up.date=baseDate;up.grade=baseGrade;up.gradeTouched=!!baseGrade;render();return}
+    var f=files[i++];
+    up.file=f.name;up.date=fileDate(f.name)||baseDate;up.grade=baseGrade;up.gradeTouched=!!baseGrade;up.rows=null;up.kind='';
+    parseFile(f).then(function(){resolveUpload();var r=up.res;
+      b.items.push({file:f.name,res:r,grade:up.grade,date:up.date,ok:r.records.length>0,err:r.records.length?'':'ملقيتش فيه حضور أو غياب'});
+    }).catch(function(err){b.items.push({file:f.name,ok:false,err:errText(err)})}).then(function(){b.done++;up.status='batch';up.res=null;try{render()}catch(e){console.error('batch render',e)}next()});
+  })();
+}
+function batchHtml(){
+  var b=up.batch;if(!b)return '';
+  var h='<div class="panel" style="margin-top:0;gap:10px"><h3>'+ic('upload',18)+' رفع '+b.total+' ملف مع بعض</h3>';
+  if(b.running)h+='<div class="msg info">جاري قراءة الملفات… <b class="num">'+b.done+'</b> من <b class="num">'+b.total+'</b></div><div class="meter"><i style="width:'+Math.round(b.done/b.total*100)+'%"></i></div>';
+  h+='<div class="list">';
+  b.items.forEach(function(it){
+    if(!it.ok){h+='<div class="li"><div class="grow"><b>'+esc(it.file)+'</b><small style="color:var(--bad)">'+esc(it.err)+' · مش هيتسجل</small></div><span class="chip a">اتخطى</span></div>';return}
+    var r=it.res,ds=r.records.map(function(x){return x.date}).sort(),c={p:0,a:0,l:0,e:0,k:0};r.records.forEach(function(x){c[x.st]++});
+    var dateTxt=fmtD(ds[0])+(ds[0]!==ds[ds.length-1]?' - '+fmtD(ds[ds.length-1]):'');
+    h+='<div class="li"><div class="grow"><b>'+esc(it.file)+'</b><small class="num">'+dateTxt+' · '+esc(it.grade||'من غير مرحلة')+' · حضور '+c.p+' · غياب '+c.a+(c.l?' · تأخير '+c.l:'')+(c.e?' · بعذر '+c.e:'')+(c.k?' · طرد '+c.k:'')+(r.newStudents.length?' · '+r.newStudents.length+' طالب جديد':'')+'</small>'+
+      (r.usedDefault?'<small style="color:var(--late)">الملف مفيهوش تاريخ، هيتسجل يوم '+fmtD(it.date)+'</small>':'')+'</div><span class="chip p num">'+r.records.length+'</span></div>';
+  });
+  h+='</div>';
+  if(!b.running){var okN=b.items.filter(function(x){return x.ok}).length,tot=b.items.reduce(function(a,x){return a+(x.ok?x.res.records.length:0)},0);
+    if(okN)h+='<div class="msg ok">جاهز: <b class="num">'+okN+'</b> ملف فيهم <b class="num">'+tot+'</b> تسجيل.</div>';
+    h+='<div class="row">'+(okN?'<button class="btn main" data-act="applyBatch" '+(saving?'disabled':'')+'>اعتماد وحفظ كل الملفات</button>':'')+'<button class="btn plain sm" data-act="cancelUpload">إلغاء</button></div>';}
+  return h+'</div>';
+}
+function applyBatch(){
+  var b=up.batch;if(!b||b.running)return;var n=0,tot=0;
+  b.items.forEach(function(it){if(!it.ok)return;applyRes(it.res,it.file,it.grade);n++;tot+=it.res.records.length});
+  up={status:'',msg:'',file:'',rows:null,kind:'',res:null,date:b.baseDate,grade:b.baseGrade,gradeTouched:!!b.baseGrade,addNew:up.addNew};
+  markDirty();save();toast('اتسجل '+n+' ملف ('+tot+' تسجيل)');
 }
 function applyUpload(){
   var r=up.res;if(!r||!r.records.length)return;
+  applyRes(r,up.file,up.grade);
+  up={status:'',msg:'',file:'',rows:null,kind:'',res:null,date:up.date,grade:up.grade,addNew:up.addNew};
+  markDirty();save();
+}
+function applyRes(r,file,grade){
   var demo=S.students.filter(function(s){return /\(مثال\)/.test(s.name)});demo.forEach(function(s){delete S.attendance[s.code]});S.students=S.students.filter(function(s){return demo.indexOf(s)<0});
   r.newStudents.forEach(function(s){if(!S.students.some(function(o){return String(o.code)===s.code}))S.students.push(s)});
-  Object.keys(r.gradeFill||{}).forEach(function(c){var s=S.students.find(function(o){return String(o.code)===c});if(s&&!s.grade)s.grade=up.grade});
+  Object.keys(r.gradeFill||{}).forEach(function(c){var s=S.students.find(function(o){return String(o.code)===c});if(s&&!s.grade)s.grade=grade});
   (r.phones||[]).forEach(function(pc){var s=S.students.find(function(o){return String(o.code)===pc[0]});if(s&&!s.phone)s.phone=pc[1]});
   r.records.forEach(function(x){S.attendance[x.code]=S.attendance[x.code]||{};S.attendance[x.code][x.date]={s:x.st,n:x.n||''}});
   var ds=r.records.map(function(x){return x.date}).sort();
-  S.uploads=S.uploads||[];S.uploads.unshift({file:up.file,at:today(),count:r.records.length,dates:ds.filter(function(x,i){return ds.indexOf(x)===i}),range:ds[0]===ds[ds.length-1]?fmtD(ds[0]):fmtD(ds[0])+' - '+fmtD(ds[ds.length-1])});
+  S.uploads=S.uploads||[];S.uploads.unshift({file:file,at:today(),count:r.records.length,dates:ds.filter(function(x,i){return ds.indexOf(x)===i}),range:ds[0]===ds[ds.length-1]?fmtD(ds[0]):fmtD(ds[0])+' - '+fmtD(ds[ds.length-1])});
   S.uploads=S.uploads.slice(0,50);
-  up={status:'',msg:'',file:'',rows:null,kind:'',res:null,date:up.date,grade:up.grade,addNew:up.addNew};
-  markDirty();save();
 }
 
 /* ---------- events ---------- */
@@ -1057,7 +1103,8 @@ document.addEventListener('click',function(e){
   if(a==='clearDemo'){var demo=S.students.filter(function(s){return /\(مثال\)/.test(s.name)});demo.forEach(function(s){delete S.attendance[s.code]});S.students=S.students.filter(function(s){return demo.indexOf(s)<0});markDirty();render();toast('اتحذف '+demo.length+' طالب تجريبي');return}
   if(a==='export')return exportData();
   if(a==='applyUpload')return applyUpload();
-  if(a==='cancelUpload'){up.status='';up.res=null;up.rows=null;render();return}
+  if(a==='cancelUpload'){up.status='';up.res=null;up.rows=null;up.batch=null;render();return}
+  if(a==='applyBatch')return applyBatch();
 });
 function val(id){var el=document.getElementById(id);return el?el.value:''}
 document.addEventListener('click',function(e){if(e.target.dataset&&e.target.dataset.closepick){pickNum='';render()}if(e.target.dataset&&e.target.dataset.closeimg){imgOpen='';render()}});
@@ -1100,7 +1147,7 @@ document.addEventListener('change',function(e){
   if(t.id==='contactsTa'){S.site.contacts=t.value.split('\n').map(function(x){return digits(x).replace(/\s+/g,' ').trim()}).filter(Boolean);markDirty();refreshBar();return}
   if(t.id==='onlyNoG'){onlyNoG=t.checked;render();return}
   if(t.id==='delGrade'){delGrade=t.value;render();return}
-  if(t.id==='upFile'&&t.files[0])return readFile(t.files[0]);
+  if(t.id==='upFile'&&t.files.length){if(t.files.length>1)return readMany([].slice.call(t.files));return readFile(t.files[0])}
   if(t.id==='upDate'){up.date=t.value||today();if(up.rows){resolveUpload();render()}return}
   if(t.id==='upAddNew'){up.addNew=t.checked;if(up.rows){resolveUpload();render()}return}
   if(t.id==='upAbsent'){up.markAbsent=t.checked;if(up.rows){resolveUpload();render()}return}
