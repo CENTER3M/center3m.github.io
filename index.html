@@ -592,6 +592,7 @@ function pStu(){
   var q=stuQuery.trim(),list=(S.students||[]).filter(function(s){return (!onlyNoG||!s.grade)&&(!q||s.name.indexOf(q)>=0||String(s.code).indexOf(q)>=0)});
   var noG=S.students.filter(function(s){return !s.grade}).length;
   if(noG)h+='<h3>طلاب من غير مرحلة ('+noG+')</h3><div class="row"><div class="field" style="flex:0 1 260px"><label for="bulkGrade">حدد مرحلتهم</label><select id="bulkGrade">'+gradeOpts('')+'</select></div><button class="btn acc" data-act="fillGrade">تطبيق على الـ '+noG+' طالب</button><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="onlyNoG" '+(onlyNoG?'checked':'')+'> اعرضهم بس في القائمة</label></div>'+((me.role==='admin'||(me.perms||[]).indexOf('del')>=0)?'<button class="btn danger sm" data-act="askDelNoG" style="align-self:flex-start">'+ic('trash',14)+' حذف الـ '+noG+' طالب اللي من غير مرحلة</button>':'');
+  h+=trashHtml();
   if(noGDel){h+='<div class="modal-bg"><div class="modal" role="dialog" aria-modal="true"><h3>'+ic('alert',20)+' تحذير</h3><p>إنت هتحذف <b class="num">'+noG+'</b> طالب ملهمش مرحلة، ومعاهم كل الحضور والغياب والدرجات بتاعتهم. أولياء أمورهم مش هيلاقوا الكود تاني، والحذف ده مش بيترجع.</p><div class="field"><label for="noGPin">اكتب باسورد الحذف</label><input type="password" inputmode="numeric" id="noGPin" autocomplete="off" dir="ltr"></div>'+(noGDel.err?'<div class="msg err">'+esc(noGDel.err)+'</div>':'')+'<div class="row"><button class="btn kill" data-act="doDelNoG" '+(noGDel.busy?'disabled':'')+'>'+(noGDel.busy?'جاري الحذف…':'حذف نهائي')+'</button><button class="btn plain" data-act="cancelDelNoG">إلغاء</button></div></div></div>'}
   h+='<h3>قائمة الطلاب ('+S.students.length+')</h3><input type="text" id="stuQ" placeholder="ابحث بالاسم أو الكود" value="'+esc(stuQuery)+'">';
   if(!list.length)return h+'<div class="empty">مفيش طلاب.</div>';
@@ -768,10 +769,10 @@ function doDel(){
   sha('c3m-del:'+pin).then(function(hh){
     var target=(STATE.delPin||S.delPin);
     if(hh!==target){delBusy=false;delErr='باسورد الحذف غلط';render();var el=document.getElementById('delPin');if(el)el.focus();return}
-    var items=delScope(delReq.date,delReq.grade),gone={};
+    var items=delScope(delReq.date,delReq.grade),gone={};var snapA={};items.forEach(function(cd){snapA[cd[0]]=snapA[cd[0]]||{};snapA[cd[0]][cd[1]]=S.attendance[cd[0]][cd[1]]});
     items.forEach(function(cd){delete S.attendance[cd[0]][cd[1]];gone[cd[1]]=1;if(!Object.keys(S.attendance[cd[0]]).length)delete S.attendance[cd[0]]});
     if(!delReq.grade){S.uploads=(S.uploads||[]).filter(function(u){var ds=u.dates||[];if(!ds.length){return !Object.keys(gone).some(function(d){return u.range===fmtD(d)})}return !ds.every(function(d){return gone[d]})})}
-    S.uploads=S.uploads||[];S.uploads.unshift({file:'حذف: '+(delReq.date?fmtD(delReq.date):'كل الحضور')+(delReq.grade?' ('+delReq.grade+')':''),at:today(),count:items.length,deleted:true});
+    S.uploads=S.uploads||[];S.uploads.unshift({file:'حذف: '+(delReq.date?fmtD(delReq.date):'كل الحضور')+(delReq.grade?' ('+delReq.grade+')':''),at:today(),count:items.length,deleted:true,trash:packTrash({attendance:snapA})});
     delReq=null;delBusy=false;markDirty();save();
   }).catch(function(){delBusy=false;delErr='المتصفح ده مش بيدعم الحذف. جرب Chrome أو Safari حديث.';render()});
 }
@@ -1068,7 +1069,7 @@ function applyRes(r,file,grade){
   r.records.forEach(function(x){S.attendance[x.code]=S.attendance[x.code]||{};S.attendance[x.code][x.date]={s:x.st,n:x.n||''}});
   var ds=r.records.map(function(x){return x.date}).sort();
   S.uploads=S.uploads||[];S.uploads.unshift({file:file,at:today(),count:r.records.length,dates:ds.filter(function(x,i){return ds.indexOf(x)===i}),range:ds[0]===ds[ds.length-1]?fmtD(ds[0]):fmtD(ds[0])+' - '+fmtD(ds[ds.length-1])});
-  S.uploads=S.uploads.slice(0,50);
+  trimUploads();
 }
 
 
@@ -1240,7 +1241,7 @@ function applyExam(){
   var r=ex.res;if(!r||!r.exams.length)return;S.exams=S.exams||{};var n=0;
   r.exams.forEach(function(e){if(!e.title)return;var id=examId(e.title,e.date);
     e.recs.forEach(function(x){S.exams[x.code]=S.exams[x.code]||{};S.exams[x.code][id]={t:e.title,d:e.date,s:x.s,m:x.m||null};n++})});
-  S.uploads=S.uploads||[];S.uploads.unshift({file:'درجات: '+ex.file,at:today(),count:n,range:r.exams.map(function(e){return e.title}).join('، ')});S.uploads=S.uploads.slice(0,50);
+  S.uploads=S.uploads||[];S.uploads.unshift({file:'درجات: '+ex.file,at:today(),count:n,range:r.exams.map(function(e){return e.title}).join('، ')});trimUploads();
   ex={title:'',date:ex.date,max:'',status:'',msg:'',file:'',parsed:null,res:null};
   markDirty();save();
 }
@@ -1248,7 +1249,9 @@ function doDelEx(){
   var pin=val('exPin');exDel.busy=true;exDel.err='';render();
   sha('c3m-del:'+pin).then(function(hh){
     if(hh!==(STATE.delPin||S.delPin)){exDel.busy=false;exDel.err='باسورد الحذف غلط';render();var el=document.getElementById('exPin');if(el)el.focus();return}
-    var id=exDel.id,n=0;Object.keys(S.exams||{}).forEach(function(c){if(S.exams[c][id]){delete S.exams[c][id];n++}if(!Object.keys(S.exams[c]).length)delete S.exams[c]});
+    var id=exDel.id,n=0,snapE={},ttl='';Object.keys(S.exams||{}).forEach(function(c){if(S.exams[c][id]){snapE[c]={};snapE[c][id]=S.exams[c][id];ttl=S.exams[c][id].t}});
+    Object.keys(S.exams||{}).forEach(function(c){if(S.exams[c][id]){delete S.exams[c][id];n++}if(!Object.keys(S.exams[c]).length)delete S.exams[c]});
+    S.uploads=S.uploads||[];S.uploads.unshift({file:'حذف درجات: '+ttl,at:today(),count:n,deleted:true,trash:packTrash({exams:snapE})});trimUploads();
     exDel=null;markDirty();save();
   }).catch(function(){exDel.busy=false;exDel.err='المتصفح ده مش بيدعم الحذف. جرب Chrome أو Safari حديث.';render()});
 }
@@ -1293,12 +1296,43 @@ function doDelNoG(){
   sha('c3m-del:'+pin).then(function(hh){
     if(hh!==(STATE.delPin||S.delPin)){noGDel.busy=false;noGDel.err='باسورد الحذف غلط';render();var el=document.getElementById('noGPin');if(el)el.focus();return}
     var gone=(S.students||[]).filter(function(s){return !s.grade});
-    gone.forEach(function(s){delete S.attendance[s.code];if(S.exams)delete S.exams[s.code]});
+    var tr=snapStudents(gone);gone.forEach(function(s){delete S.attendance[s.code];if(S.exams)delete S.exams[s.code]});
     S.students=S.students.filter(function(s){return !!s.grade});onlyNoG=false;
-    S.uploads=S.uploads||[];S.uploads.unshift({file:'حذف الطلاب اللي من غير مرحلة',at:today(),count:gone.length,deleted:true});
+    S.uploads=S.uploads||[];S.uploads.unshift({file:'حذف الطلاب اللي من غير مرحلة',at:today(),count:gone.length,deleted:true,trash:tr});
     noGDel=null;markDirty();save();toast('جاري حذف '+gone.length+' طالب…');
   }).catch(function(){noGDel.busy=false;noGDel.err='المتصفح ده مش بيدعم الحذف. جرب Chrome أو Safari حديث.';render()});
 }
+
+
+/* ---------- recycle bin: every delete keeps a copy you can bring back ---------- */
+var restoreAsk='';
+function packTrash(o){var t=JSON.stringify(o);return t.length<900000?t:''}
+function snapStudents(list){var o={students:[],attendance:{},exams:{}};list.forEach(function(s){o.students.push(clone(s));if(S.attendance[s.code])o.attendance[s.code]=clone(S.attendance[s.code]);if(S.exams&&S.exams[s.code])o.exams[s.code]=clone(S.exams[s.code])});return packTrash(o)}
+function trimUploads(){var keep=[],n=0;(S.uploads||[]).forEach(function(u){if(!u.id)u.id='n'+Date.now()+Math.random().toString(36).slice(2,7);if(u.trash||n<50){keep.push(u);if(!u.trash)n++}});S.uploads=keep}
+function canRestore(){return me&&(me.role==='admin'||(me.perms||[]).indexOf('del')>=0)}
+function mergeData(o){var have={},c={stu:0,att:0,ex:0};(S.students||[]).forEach(function(s){have[String(s.code)]=1});
+  (o.students||[]).forEach(function(s){if(!have[String(s.code)]){S.students.push(clone(s));have[String(s.code)]=1;c.stu++}});
+  Object.keys(o.attendance||{}).forEach(function(code){if(!have[code])return;var a=o.attendance[code];S.attendance[code]=S.attendance[code]||{};Object.keys(a).forEach(function(d){if(!S.attendance[code][d]){S.attendance[code][d]=a[d];c.att++}})});
+  S.exams=S.exams||{};Object.keys(o.exams||{}).forEach(function(code){if(!have[code])return;var e=o.exams[code];S.exams[code]=S.exams[code]||{};Object.keys(e).forEach(function(k){if(!S.exams[code][k]){S.exams[code][k]=e[k];c.ex++}})});
+  S.students.sort(function(a,b){return (parseInt(a.code,10)||0)-(parseInt(b.code,10)||0)});return c}
+function trashHtml(){
+  var L=(S.uploads||[]).filter(function(u){return u.trash});
+  var h='<h3>'+ic('trash',18)+' المحذوفات (تقدر ترجعها)</h3>';
+  if(!L.length)h+='<p class="hint">مفيش حاجة محذوفة. أي حذف هتعمله من هنا ورايح هيظهر هنا وتقدر ترجعه بدوسة.</p>';
+  else{h+='<div class="list">';L.forEach(function(u){h+='<div class="li"><div class="grow"><b style="color:var(--bad)">'+esc(u.file)+'</b><small class="num">'+esc(u.at?fmtD(u.at):'')+' · '+u.count+'</small></div>'+(canRestore()?(restoreAsk===u.id?'<button class="btn acc sm" data-act="doRestore" data-rid="'+esc(u.id)+'">تأكيد الاسترجاع</button><button class="btn plain sm" data-act="cancelRestore">لا</button>':'<button class="btn plain sm" data-act="askRestore" data-rid="'+esc(u.id)+'">'+ic('upload',14)+' استرجاع</button>'):'')+'</div>'});h+='</div>'}
+  h+='<details style="margin-top:6px"><summary style="cursor:pointer;font-weight:600">رجّع طلاب اتمسحوا قبل كده من نسخة احتياطية</summary><p class="hint" style="margin-top:8px">اختار ملف النسخة الاحتياطية (.json). الموقع هيضيف بس الطلاب اللي مش موجودين دلوقتي، ومعاهم حضورهم ودرجاتهم، ومش هيغيّر أي حاجة في الطلاب الموجودين.</p><input type="file" id="mergeFile" accept=".json,application/json"></details>';
+  return h;
+}
+function doRestore(id){
+  var u=(S.uploads||[]).find(function(x){return x.id===id});if(!u||!u.trash)return;var o;try{o=JSON.parse(u.trash)}catch(x){toast('النسخة المحذوفة دي بايظة');return}
+  var c=mergeData(o);S.uploads=S.uploads.filter(function(x){return x!==u});
+  S.uploads.unshift({file:'استرجاع: '+u.file.replace(/^حذف:?\s*/,''),at:today(),count:c.stu+c.att+c.ex});trimUploads();
+  restoreAsk='';markDirty();save();toast('اترجع '+(c.stu?c.stu+' طالب، ':'')+c.att+' يوم حضور'+(c.ex?'، '+c.ex+' درجة':''));
+}
+function mergeFile(file){var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!d.students)throw 0;var c=mergeData(d);
+  if(!c.stu){toast('كل الطلاب اللي في الملف موجودين أصلاً');return}
+  S.uploads=S.uploads||[];S.uploads.unshift({file:'استرجاع من نسخة احتياطية: '+file.name,at:today(),count:c.stu});trimUploads();
+  markDirty();render();toast('اترجع '+c.stu+' طالب ومعاهم '+c.att+' يوم حضور. دوس حفظ')}catch(x){toast('الملف ده مش نسخة احتياطية صحيحة')}};r.readAsText(file)}
 
 /* ---------- events ---------- */
 document.addEventListener('click',function(e){
@@ -1319,7 +1353,7 @@ document.addEventListener('click',function(e){
   if(t.dataset.rmsch){S.site.schedule=(S.site.schedule||[]).filter(function(e){return e.id!==t.dataset.rmsch});markDirty();render();return}
   if(t.dataset.rmann){S.site.ann=(S.site.ann||[]).filter(function(e){return e.id!==t.dataset.rmann});markDirty();render();return}
   if(t.dataset.askdel){confirmDel=t.dataset.askdel;render();return}
-  if(t.dataset.del){var c=t.dataset.del;S.students=S.students.filter(function(s){return String(s.code)!==c});delete S.attendance[c];if(S.exams)delete S.exams[c];confirmDel='';markDirty();render();toast('اتحذف الطالب');return}
+  if(t.dataset.del){var c=t.dataset.del;var one=S.students.filter(function(s){return String(s.code)===c});if(one.length){S.uploads=S.uploads||[];S.uploads.unshift({file:'حذف طالب: '+one[0].name+' ('+c+')',at:today(),count:1,deleted:true,trash:snapStudents(one)});trimUploads()}S.students=S.students.filter(function(s){return String(s.code)!==c});delete S.attendance[c];if(S.exams)delete S.exams[c];confirmDel='';markDirty();render();toast('اتحذف الطالب');return}
   if(t.dataset.rm){S[t.dataset.rm].splice(+t.dataset.i,1);markDirty();render();return}
   var a=t.dataset.act;if(!a)return;
   if(a==='save')return save();
@@ -1371,6 +1405,9 @@ document.addEventListener('click',function(e){
   if(a==='cancelUpload'){up.status='';up.res=null;up.rows=null;up.batch=null;render();return}
   if(a==='applyBatch')return applyBatch();
   if(a==='applyExam')return applyExam();
+  if(a==='askRestore'){restoreAsk=t.dataset.rid;render();return}
+  if(a==='cancelRestore'){restoreAsk='';render();return}
+  if(a==='doRestore')return doRestore(t.dataset.rid);
   if(a==='askDelNoG'){noGDel={err:'',busy:false};render();var pn=document.getElementById('noGPin');if(pn)pn.focus();return}
   if(a==='cancelDelNoG'){noGDel=null;render();return}
   if(a==='doDelNoG')return doDelNoG();
@@ -1432,6 +1469,7 @@ document.addEventListener('change',function(e){
   if(t.id==='upGrade'){up.grade=t.value;up.gradeTouched=true;if(up.rows){resolveUpload();render()}return}
   if(t.id==='logoFile'&&t.files[0])return loadLogo(t.files[0]);
   if(t.id==='importFile'&&t.files[0])return importData(t.files[0]);
+  if(t.id==='mergeFile'&&t.files[0]){mergeFile(t.files[0]);t.value='';return}
 });
 document.addEventListener('input',function(e){if(e.target.id==='attQ'){attQuery=e.target.value;attFilter();return}if(e.target.id==='stuQ'){stuQuery=e.target.value;var pos=e.target.selectionStart;render();var el=document.getElementById('stuQ');if(el){el.focus();try{el.setSelectionRange(pos,pos)}catch(x){}}}});
 function refreshBar(){var bar=document.querySelector('.savebar');if(!bar)return;bar.querySelector('span').textContent='فيه تعديلات لسه متحفظتش';var b=bar.querySelector('[data-act=save]');b.disabled=false;if(!bar.querySelector('[data-act=discard]')){var d=document.createElement('button');d.className='btn ghost sm';d.dataset.act='discard';d.textContent='إلغاء التعديلات';b.parentNode.insertBefore(d,b)}}
