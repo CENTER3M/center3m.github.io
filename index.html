@@ -758,8 +758,8 @@ function pDel(){
   return h;
 }
 function delModal(){
-  var what=delReq.date?'حضور وغياب يوم '+dayName(delReq.date)+' '+fmtD(delReq.date):'كل الحضور والغياب';
-  return '<div class="modal-bg"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="delTitle"><h3 id="delTitle">'+ic('alert',20)+' تحذير</h3><p>إنت هتحذف '+what+(delReq.grade?' لطلاب '+esc(delReq.grade):'')+'، يعني <b class="num">'+delReq.count+'</b> تسجيل. أولياء الأمور مش هيشوفوهم تاني، والحذف ده مش بيترجع.</p>'+
+  var what=delReq.label?'حضور وغياب '+esc(delReq.label):delReq.date?'حضور وغياب يوم '+dayName(delReq.date)+' '+fmtD(delReq.date):'كل الحضور والغياب';
+  return '<div class="modal-bg"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="delTitle"><h3 id="delTitle">'+ic('alert',20)+' تحذير</h3><p>إنت هتحذف '+what+(delReq.grade?' لطلاب '+esc(delReq.grade):'')+'، يعني <b class="num">'+delReq.count+'</b> تسجيل. أولياء الأمور مش هيشوفوهم تاني. لو حذفت بالغلط تقدر ترجعه من "المحذوفات" في تاب الطلاب.</p>'+
   '<div class="field"><label for="delPin">اكتب باسورد الحذف</label><input type="password" inputmode="numeric" id="delPin" autocomplete="off" dir="ltr"></div>'+(delErr?'<div class="msg err">'+esc(delErr)+'</div>':'')+
   '<div class="row"><button class="btn kill" data-act="doDel" '+(delBusy?'disabled':'')+'>'+(delBusy?'جاري الحذف…':'حذف نهائي')+'</button><button class="btn plain" data-act="cancelDel2">إلغاء</button></div></div></div>';
 }
@@ -769,10 +769,11 @@ function doDel(){
   sha('c3m-del:'+pin).then(function(hh){
     var target=(STATE.delPin||S.delPin);
     if(hh!==target){delBusy=false;delErr='باسورد الحذف غلط';render();var el=document.getElementById('delPin');if(el)el.focus();return}
-    var items=delScope(delReq.date,delReq.grade),gone={};var snapA={};items.forEach(function(cd){snapA[cd[0]]=snapA[cd[0]]||{};snapA[cd[0]][cd[1]]=S.attendance[cd[0]][cd[1]]});
+    var items=delReq.items||delScope(delReq.date,delReq.grade),gone={};var snapA={};items.forEach(function(cd){snapA[cd[0]]=snapA[cd[0]]||{};snapA[cd[0]][cd[1]]=S.attendance[cd[0]][cd[1]]});
     items.forEach(function(cd){delete S.attendance[cd[0]][cd[1]];gone[cd[1]]=1;if(!Object.keys(S.attendance[cd[0]]).length)delete S.attendance[cd[0]]});
-    if(!delReq.grade){S.uploads=(S.uploads||[]).filter(function(u){var ds=u.dates||[];if(!ds.length){return !Object.keys(gone).some(function(d){return u.range===fmtD(d)})}return !ds.every(function(d){return gone[d]})})}
-    S.uploads=S.uploads||[];S.uploads.unshift({file:'حذف: '+(delReq.date?fmtD(delReq.date):'كل الحضور')+(delReq.grade?' ('+delReq.grade+')':''),at:today(),count:items.length,deleted:true,trash:packTrash({attendance:snapA})});
+    if(delReq.upId){S.uploads=(S.uploads||[]).filter(function(u){return u.id!==delReq.upId})}
+    else if(!delReq.grade){S.uploads=(S.uploads||[]).filter(function(u){var ds=u.dates||[];if(!ds.length){return !Object.keys(gone).some(function(d){return u.range===fmtD(d)})}return !ds.every(function(d){return gone[d]})})}
+    S.uploads=S.uploads||[];S.uploads.unshift({file:'حذف: '+(delReq.label?delReq.label:delReq.date?fmtD(delReq.date):'كل الحضور')+(delReq.grade?' ('+delReq.grade+')':''),at:today(),count:items.length,deleted:true,trash:packTrash({attendance:snapA})});
     delReq=null;delBusy=false;markDirty();save();
   }).catch(function(){delBusy=false;delErr='المتصفح ده مش بيدعم الحذف. جرب Chrome أو Safari حديث.';render()});
 }
@@ -799,7 +800,7 @@ function pUpload(){
   if(up.status==='preview'&&up.res)h+=previewHtml(up.res);
   var log=(S.uploads||[]).slice(0,8);
   if(log.length){h+='<h3>آخر الملفات اللي اترفعت</h3><div class="list">';
-    log.forEach(function(u){h+='<div class="li"><div class="grow"><b'+(u.deleted?' style="color:var(--bad)"':'')+'>'+esc(u.file)+'</b><small class="num">'+esc(u.at?fmtD(u.at):'')+' · '+u.count+' تسجيل'+(u.range?' · '+esc(u.range):'')+'</small></div></div>'});h+='</div>'}
+    log.forEach(function(u){h+='<div class="li"><div class="grow"><b'+(u.deleted?' style="color:var(--bad)"':'')+'>'+esc(u.file)+'</b><small class="num">'+esc(u.at?fmtD(u.at):'')+' · '+u.count+' تسجيل'+(u.range?' · '+esc(u.range):'')+'</small></div>'+(!u.deleted&&canRestore()&&(u.recs||(u.dates&&u.dates.length))?'<button class="btn danger sm" data-act="askDelUp" data-uid="'+esc(u.id)+'">'+ic('trash',14)+' حذف اليوم</button>':'')+'</div>'});h+='</div>'}
   return h;
 }
 function previewHtml(r){
@@ -1068,7 +1069,8 @@ function applyRes(r,file,grade){
   (r.phones||[]).forEach(function(pc){var s=S.students.find(function(o){return String(o.code)===pc[0]});if(s&&!s.phone)s.phone=pc[1]});
   r.records.forEach(function(x){S.attendance[x.code]=S.attendance[x.code]||{};S.attendance[x.code][x.date]={s:x.st,n:x.n||''}});
   var ds=r.records.map(function(x){return x.date}).sort();
-  S.uploads=S.uploads||[];S.uploads.unshift({file:file,at:today(),count:r.records.length,dates:ds.filter(function(x,i){return ds.indexOf(x)===i}),range:ds[0]===ds[ds.length-1]?fmtD(ds[0]):fmtD(ds[0])+' - '+fmtD(ds[ds.length-1])});
+  var recs={};r.records.forEach(function(x){(recs[x.date]=recs[x.date]||[]).push(x.code)});
+  S.uploads=S.uploads||[];S.uploads.unshift({file:file,at:today(),count:r.records.length,recs:recs,dates:ds.filter(function(x,i){return ds.indexOf(x)===i}),range:ds[0]===ds[ds.length-1]?fmtD(ds[0]):fmtD(ds[0])+' - '+fmtD(ds[ds.length-1])});
   trimUploads();
 }
 
@@ -1334,6 +1336,17 @@ function mergeFile(file){var r=new FileReader();r.onload=function(){try{var d=JS
   S.uploads=S.uploads||[];S.uploads.unshift({file:'استرجاع من نسخة احتياطية: '+file.name,at:today(),count:c.stu});trimUploads();
   markDirty();render();toast('اترجع '+c.stu+' طالب ومعاهم '+c.att+' يوم حضور. دوس حفظ')}catch(x){toast('الملف ده مش نسخة احتياطية صحيحة')}};r.readAsText(file)}
 
+
+function askDelUp(id){
+  var u=(S.uploads||[]).find(function(x){return x.id===id});if(!u)return;var items=[],seen={};
+  if(u.recs)Object.keys(u.recs).forEach(function(d){u.recs[d].forEach(function(c){if(S.attendance[c]&&S.attendance[c][d]&&!seen[c+'|'+d]){seen[c+'|'+d]=1;items.push([c,d])}})});
+  else (u.dates||[]).forEach(function(d){delScope(d,'').forEach(function(cd){items.push(cd)})});
+  if(!items.length){toast('الحضور بتاع الملف ده اتحذف قبل كده');return}
+  var ds=(u.recs?Object.keys(u.recs):u.dates||[]).sort();
+  delReq={date:ds.length===1?ds[0]:'',grade:'',count:items.length,items:items,upId:u.id,label:'ملف '+u.file+' ('+ds.map(function(d){return dayName(d)+' '+fmtD(d)}).join('، ')+')'+(u.recs?'':' — لكل المراحل في اليوم ده')};
+  delErr='';render();var el=document.getElementById('delPin');if(el)el.focus();
+}
+
 /* ---------- events ---------- */
 document.addEventListener('click',function(e){
   var t=e.target.closest('button,[data-go]');if(!t)return;
@@ -1405,6 +1418,7 @@ document.addEventListener('click',function(e){
   if(a==='cancelUpload'){up.status='';up.res=null;up.rows=null;up.batch=null;render();return}
   if(a==='applyBatch')return applyBatch();
   if(a==='applyExam')return applyExam();
+  if(a==='askDelUp')return askDelUp(t.dataset.uid);
   if(a==='askRestore'){restoreAsk=t.dataset.rid;render();return}
   if(a==='cancelRestore'){restoreAsk='';render();return}
   if(a==='doRestore')return doRestore(t.dataset.rid);
