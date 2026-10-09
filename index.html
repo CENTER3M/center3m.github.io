@@ -1087,31 +1087,43 @@ function parseScore(v){
 function maxFromHeader(t){var m=digits(String(t)).match(/(?:من|\/|out of|\()\s*(\d{1,4})\s*\)?/i);return m?+m[1]:null}
 var SCORE_H=/درج|نتيج|score|mark|grade|امتحان|اختبار|كويز|quiz|exam|test|تقييم|مجموع|total/;
 var SKIP_H=/^م$|مسلسل|^#$|^n$|^no$|تليفون|موبايل|هاتف|phone|mobile|ولي|ملاحظ|note|مجموعه|group|^الصف|المرحله|stage|تاريخ|date/;
+var MAX_H=/النهائيه|النهايه|العظمي|الكليه|درجه الامتحان|درجه الاختبار|درجه الكويز|^من$|^max|full mark|out of|total mark/;
+var TITLE_H=/اسم الامتحان|اسم الاختبار|اسم الكويز|^(ال)?امتحان$|^(ال)?اختبار$|^(ال)?كويز$|exam name|^exam$|^test$|^quiz$|عنوان|^(ال)?ماده$|المحاضره|^(ال)?حصه$|^(ال)?درس$|^(ال)?موضوع$/;
+var GENERIC_H=/^(ال)?(درجه|درجات|نتيجه|score|mark|grade)( ال?طالب)?$|^درجه الطالب$|^الدرجه المستحقه$|^المجموع$/;
 function examHeader(r){
   if((r||[]).some(function(c){return /^\d{2,8}$/.test(cleanCode(c))}))return null;
-  var cc=-1,nc=-1,sc=[];
+  var cc=-1,nc=-1,mx=-1,tc=-1,dc=-1,sc=[];
   (r||[]).forEach(function(cell,j){var t=normAr(cell);if(!t)return;
     if(cc<0&&/كود|code|^id$|رقم الطالب|^الرقم$|^رقم$/.test(t)){cc=j;return}
+    if(tc<0&&TITLE_H.test(t)){tc=j;return}
     if(nc<0&&/^(ال)?اسم|name/.test(t)){nc=j;return}
+    if(mx<0&&MAX_H.test(t)){mx=j;return}
+    if(dc<0&&/تاريخ|date/.test(t)){dc=j;return}
     if(SKIP_H.test(t))return;
     sc.push({j:j,h:String(cell).trim(),score:SCORE_H.test(t)});
   });
   if(cc<0&&nc<0)return null;
-  return {code:cc,name:nc,cand:sc};
+  return {code:cc,name:nc,max:mx,title:tc,date:dc,cand:sc};
 }
+function cleanTitle(h){var t=String(h||'').replace(/\s*[\(\[]\s*[\d٠-٩]+\s*[\)\]]\s*$/,'').replace(/\s*(من|\/)\s*[\d٠-٩]+\s*$/,'').trim();return GENERIC_H.test(normAr(t))?'':t}
 function parseExamSheet(rows){
-  var out={cols:[],recs:[],skipped:[]},hdr=null,hi=-1;
-  for(var i=0;i<Math.min(rows.length,30);i++){var hh=examHeader(rows[i]);if(hh&&hh.cand.length){hdr=hh;hi=i;break}}
+  var out={cols:[],recs:[],skipped:[]},hdr=null,hi=-1,sheetTitle='';
+  for(var i=0;i<Math.min(rows.length,30);i++){var hh=examHeader(rows[i]);if(hh&&hh.cand.length){hdr=hh;hi=i;break}
+    var cells=(rows[i]||[]).filter(function(c){return String(c).trim()!==''});if(cells.length===1&&!sheetTitle&&/[؀-ۿa-z]/i.test(String(cells[0])))sheetTitle=String(cells[0]).trim()}
   if(!hdr)return null;
   var body=rows.slice(hi+1);
-  // keep candidate columns whose values look like scores
   var cols=hdr.cand.filter(function(c){var n=0,ok=0;body.forEach(function(r){var v=(r||[])[c.j];if(v===''||v==null)return;n++;if(parseScore(v))ok++});return n&&ok/n>=0.6&&(c.score||ok>=2)});
   if(!cols.length)return null;
-  out.cols=cols.map(function(c){return {key:'c'+c.j,title:c.h.replace(/\s*[\(\[]\s*[\d٠-٩]+\s*[\)\]]\s*$/,'').replace(/\s*(من|\/)\s*[\d٠-٩]+\s*$/,'').trim()||c.h,max:maxFromHeader(c.h)}});
+  var colIdx={};
+  function colFor(c,rt,rd){var k='c'+c.j+(rt?'|'+normAr(rt):'')+(rd?'|'+rd:'');if(!colIdx[k]){colIdx[k]={key:k,title:rt||cleanTitle(c.h)||(cols.length===1?'':c.h),max:maxFromHeader(c.h),date:rd||'',sheetTitle:sheetTitle};out.cols.push(colIdx[k])}return colIdx[k]}
   body.forEach(function(r){r=r||[];var code=hdr.code>=0?cleanCode(r[hdr.code]):'',name=hdr.name>=0?fixName(r[hdr.name]):'';
     if(!code&&!name)return;if(LABEL_RE.test(normAr(name)))return;if(code&&!/^\d+$/.test(code)){if(!name)return;code=''}
-    cols.forEach(function(c){var v=r[c.j];var sc=parseScore(v);if(!sc){if(v!==''&&v!=null&&String(v).trim())out.skipped.push({text:[code,name].filter(Boolean).join(' - ')+': '+v,why:'الدرجة مش مفهومة'});return}
-      out.recs.push({code:code,name:name,key:'c'+c.j,s:sc.abs?null:sc.s,m:sc.m||null,line:[code,name].filter(Boolean).join(' - ')})});
+    var rt=hdr.title>=0?String(r[hdr.title]==null?'':r[hdr.title]).trim():'',rd=hdr.date>=0?(toDate(r[hdr.date])||''):'';
+    var rm=null;if(hdr.max>=0){var mv=parseScore(r[hdr.max]);if(mv&&!mv.abs)rm=mv.m||mv.s}
+    var line=[code,name].filter(Boolean).join(' - ');
+    cols.forEach(function(c){var v=r[c.j];var sc=parseScore(v);if(!sc){if(v!==''&&v!=null&&String(v).trim())out.skipped.push({text:line+': '+v,why:'الدرجة مش مفهومة'});return}
+      var col=colFor(c,rt,rd);
+      out.recs.push({code:code,name:name,key:col.key,s:sc.abs?null:sc.s,m:sc.m||rm||null,line:line})});
   });
   return out;
 }
@@ -1155,10 +1167,10 @@ function resolveExam(){
   var byCode={},nameIdx={};(S.students||[]).forEach(function(s){byCode[String(s.code)]=s;var n=normAr(s.name);nameIdx[n]=nameIdx[n]?'@dup':String(s.code)});
   var inMax=parseFloat(digits(ex.max||'').replace(',','.'))||null;
   var used=p.cols.filter(function(c){return p.recs.some(function(r){return r.key===c.key})});
-  var exams=used.map(function(c){var title=used.length===1?(ex.title||c.title||''):(c.title||ex.title||'');
+  var exams=used.map(function(c){var title=used.length===1?(ex.title||c.title||''):(c.title||ex.title||'');if(!title&&c.sheetTitle)title=c.sheetTitle;
     var vals=p.recs.filter(function(r){return r.key===c.key&&r.m}).map(function(r){return r.m});
     var cellMax=vals.length?vals.sort(function(a,b){return b-a})[0]:null;
-    return {key:c.key,title:title,max:inMax||c.max||cellMax||null,date:ex.date||today(),recs:[]}});
+    return {key:c.key,title:title,max:inMax||c.max||cellMax||null,date:c.date||ex.date||today(),recs:[]}});
   var res={exams:exams,skipped:p.skipped.slice(),total:0};
   var byKey={};exams.forEach(function(e){byKey[e.key]=e});
   p.recs.forEach(function(r){var e=byKey[r.key];if(!e)return;
