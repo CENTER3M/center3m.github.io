@@ -272,6 +272,14 @@ textarea{min-height:90px;resize:vertical}
 .vbar span{font-size:11px;color:var(--muted)}
 .vbar small{font-size:11px;color:var(--muted)}
 @keyframes growUp{from{height:0}}
+.notes{max-width:640px;margin:16px auto 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.notes h3{display:flex;align-items:center;gap:8px;font-size:17px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.notes h3 .ico{color:var(--accent)}
+.notes h3 small{font-size:13px;color:var(--muted);font-weight:500}
+.note-row{padding:12px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.note-row:first-of-type{border-top:0}
+.note-row p{white-space:pre-line;line-height:1.8}
+.note-row .chip{font-size:12px;padding:2px 10px}
 /* exams */
 .exams{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .exams-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;flex-wrap:wrap}
@@ -413,10 +421,10 @@ function randHex(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return hex
 function hashPw(pw,salt,iter){var enc=new TextEncoder();return crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveBits']).then(function(k){return crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(salt),iterations:iter,hash:'SHA-256'},k,256)}).then(hex)}
 function makeCred(pw){var salt=randHex(16),iter=150000;return hashPw(pw,salt,iter).then(function(h){return {salt:salt,iter:iter,hash:h}})}
 function uid(){return 'u'+randHex(6)}
-var ICO={chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',award:'<circle cx="12" cy="9" r="6"/><path d="M8.2 13.8 7 22l5-3 5 3-1.2-8.2"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',check:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',student:'<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',text:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',palette:'<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 0 0 0 20c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7h2a5.6 5.6 0 0 0 5.5-5.5C22 6 17.5 2 12 2z"/>',save:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',alert:'<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',plus:'<path d="M12 5v14"/><path d="M5 12h14"/>'};
+var ICO={pin:'<path d="M12 17v5"/><path d="M9 3h6l-1 6 4 4v2H6v-2l4-4z"/>',chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',award:'<circle cx="12" cy="9" r="6"/><path d="M8.2 13.8 7 22l5-3 5 3-1.2-8.2"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',check:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',student:'<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',text:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',palette:'<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 0 0 0 20c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7h2a5.6 5.6 0 0 0 5.5-5.5C22 6 17.5 2 12 2z"/>',save:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',alert:'<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',plus:'<path d="M12 5v14"/><path d="M5 12h14"/>'};
 function ic(n,s){return '<svg class="ico" viewBox="0 0 24 24" width="'+(s||18)+'" height="'+(s||18)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICO[n]||'')+'</svg>'}
-var TAB_IC={stats:'chart',exams:'award',upload:'upload',att:'check',media:'image',notice:'megaphone',links:'link',stu:'student',del:'trash',site:'text',look:'palette',backup:'save',users:'users'};
-function allowedTabs(){var all=PERMS.slice(0,2).concat([['exams','درجات الامتحانات'],['media','صور الجداول'],['notice','إعلان الصفحة'],['links','الروابط']],PERMS.slice(2),[['users','الموظفين والصلاحيات'],['stats','عدد الزيارات']]);if(!me)return [];if(me.role==='admin')return all;return all.filter(function(t){var need=(t[0]==='media'||t[0]==='notice'||t[0]==='links')?'site':t[0]==='exams'?'upload':t[0];return (me.perms||[]).indexOf(need)>=0})}
+var TAB_IC={notes:'pin',stats:'chart',exams:'award',upload:'upload',att:'check',media:'image',notice:'megaphone',links:'link',stu:'student',del:'trash',site:'text',look:'palette',backup:'save',users:'users'};
+function allowedTabs(){var all=PERMS.slice(0,2).concat([['exams','درجات الامتحانات'],['media','صور الجداول'],['notice','إعلان الصفحة'],['notes','الملاحظات'],['links','الروابط']],PERMS.slice(2),[['users','الموظفين والصلاحيات'],['stats','عدد الزيارات']]);if(!me)return [];if(me.role==='admin')return all;return all.filter(function(t){var need=(t[0]==='media'||t[0]==='notice'||t[0]==='notes'||t[0]==='links')?'site':t[0]==='exams'?'upload':t[0];return (me.perms||[]).indexOf(need)>=0})}
 function markDirty(){dirty=true}
 
 function applyTheme(){
@@ -496,7 +504,10 @@ function schedHtml(d,stu){var rows=(d.site.schedule||[]).filter(function(e){retu
   var mine=stu.group?normG(stu.group):'';
   return '<section class="sched"><h3>مواعيد الحصص · '+esc(stu.grade)+'</h3><div class="sched-list">'+rows.map(function(e){var hit=mine&&e.group&&(normG(e.group).indexOf(mine)>=0||mine.indexOf(normG(e.group))>=0);
     return '<div class="sched-row'+(hit?' mine':'')+'"><div class="sg"><b>'+esc(e.group||'المجموعة')+'</b>'+(hit?'<span class="badge">مجموعة ابنك</span>':'')+'</div><div class="sd">'+esc(e.days||'')+'</div><div class="st num">'+esc(e.time||'')+'</div>'+(e.note?'<div class="sn">⚠ '+esc(e.note)+'</div>':'')+'</div>'}).join('')+'</div></section>'}
-function noticeHtml(d){var n=String(d.site.notice||'').trim();if(!n)return '';return '<section class="notice"><span class="notice-ic">'+ic('megaphone',20)+'</span><p>'+esc(n)+'</p></section>'}
+function noticeHtml(d,stu){var n=String(d.site.notice||'').trim();if(!n)return '';var g=d.site.noticeStage||'';if(g&&!(stu&&stu.grade===g))return '';return '<section class="notice"><span class="notice-ic">'+ic('megaphone',20)+'</span><p>'+esc(n)+'</p></section>'}
+function notesHtml(d,stu){var L=(d.site.notes||[]).filter(function(x){return String(x.text||'').trim()&&(!x.stage||(stu&&stu.grade===x.stage))});if(!L.length)return '';
+  var h='<section class="notes"><h3>'+ic('pin',18)+' ملاحظات'+(stu&&L.some(function(x){return x.stage})?' <small>'+esc(stu.grade)+'</small>':'')+'</h3>';
+  L.forEach(function(x){h+='<div class="note-row">'+(x.stage?'<span class="chip e">'+esc(x.stage)+'</span>':'')+'<p>'+esc(x.text)+'</p></div>'});return h+'</section>'}
 function mediaFor(d,stu){return (d.media||[]).filter(function(m){return m&&m.data&&(!m.stage||(stu&&stu.grade===m.stage))}).sort(function(a,b){return (a.order||0)-(b.order||0)})}
 function mediaHtml(d,stu){var ms=mediaFor(d,stu);if(!ms.length)return '';
   return '<section class="media"><h3>'+esc(d.site.mediaTitle||'جداول الحصص')+'</h3><div class="media-grid">'+ms.map(function(m){return '<figure><button class="media-img" data-img="'+esc(m.id)+'" aria-label="تكبير '+esc(m.caption||'الصورة')+'"><img src="'+m.data+'" alt="'+esc(m.caption||'جدول')+'" loading="lazy"></button>'+(m.caption?'<figcaption>'+esc(m.caption)+(m.stage?' · '+esc(m.stage):'')+'</figcaption>':(m.stage?'<figcaption>'+esc(m.stage)+'</figcaption>':''))+'</figure>'}).join('')+'</div></section>'}
@@ -520,7 +531,8 @@ function trackView(d){
     if(trackLoading)h+='<div class="msg info">جاري البحث…</div>';else if(!stu)h+='<div class="msg err">الكود ده مش موجود. اتأكد من الكود أو كلم السنتر.</div>';}
   else if((d.students||[]).some(function(s){return /\(مثال\)/.test(s.name)}))h+='<p class="hint">مثال: جرب الكود 1001</p>';
   h+='</div>';
-  h+=noticeHtml(d);
+  h+=noticeHtml(d,stu);
+  h+=notesHtml(d,stu);
   if(stu){
     var att=d.attendance[stu.code]||{};var dates=Object.keys(att).sort();
     var c=studentStats(stu.code,d);var total=c.p+c.a+c.l+c.e+c.k;var rate=total?Math.round((c.p+c.l)/total*100):0;
@@ -561,7 +573,7 @@ function adminView(){
   var isAdmin=me.role==='admin';
   var h='<div class="wrap page"><div class="who"><div><div class="eyebrow">'+(isAdmin?'لوحة تحكم الأدمن':'لوحة الموظف')+'</div><h2 style="font-size:clamp(24px,3.4vw,32px)">الإعدادات</h2></div><div class="row" style="align-items:center"><span>'+esc(me.name||me.u)+'</span><span class="badge">'+(isAdmin?'أدمن':'موظف')+'</span><button class="btn plain sm" data-act="logout">'+ic('logout',15)+' خروج</button></div></div><p class="lead">الحضور بيتحفظ يوم بيوم ويتجمع على بعضه، وأي شيت جديد بيتضاف على اللي قبله. لما تدوس "حفظ" بيظهر لأولياء الأمور على طول.</p>';
   h+='<div class="tabs" role="tablist">'+tabs.map(function(t){return '<button data-tab="'+t[0]+'" class="'+(adminTab===t[0]?'on':'')+'">'+ic(TAB_IC[t[0]]||'settings',16)+'<span>'+t[1]+'</span></button>'}).join('')+'</div>';
-  h+='<div class="panel">'+({stats:pStats,exams:pExams,upload:pUpload,att:pAtt,media:pMedia,notice:pNotice,links:pLinks,stu:pStu,site:pSite,news:pNews,team:pTeam,look:pLook,backup:pBackup,users:pUsers,del:pDel}[adminTab])()+'</div>';
+  h+='<div class="panel">'+({notes:pNotes,stats:pStats,exams:pExams,upload:pUpload,att:pAtt,media:pMedia,notice:pNotice,links:pLinks,stu:pStu,site:pSite,news:pNews,team:pTeam,look:pLook,backup:pBackup,users:pUsers,del:pDel}[adminTab])()+'</div>';
   if(delReq)h+=delModal();
   h+='<div class="savebar"><span>'+(dirty?'فيه تعديلات لسه متحفظتش':'كل التعديلات محفوظة')+'</span><div class="row">'+(dirty?'<button class="btn ghost sm" data-act="discard">إلغاء التعديلات</button>':'')+'<button class="btn main" data-act="save" '+(dirty&&!saving?'':'disabled')+'>'+(saving?'جاري الحفظ…':'حفظ')+'</button></div></div>';
   return h+'</div>';
@@ -631,7 +643,18 @@ function stageSel(attr,val,allLabel){return '<select '+attr+'>'+(allLabel?'<opti
 function sid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 function pNotice(){var s=S.site;
   return '<h3>'+ic('megaphone')+' إعلان في نص الصفحة</h3><p class="hint">أي كلام تكتبه هنا بيظهر لكل أولياء الأمور تحت خانة الكود مباشرة. سيبه فاضي لو مش عايز إعلان، وبعد ما تكتب دوس "حفظ" تحت.</p>'+
-  '<div class="field"><label for="noticeTa">نص الإعلان</label><textarea id="noticeTa" style="min-height:140px" placeholder="مثلاً: امتحان الشهر يوم الخميس الساعة 4">'+esc(s.notice||'')+'</textarea></div>';
+  '<div class="field"><label for="noticeTa">نص الإعلان</label><textarea id="noticeTa" style="min-height:140px" placeholder="مثلاً: امتحان الشهر يوم الخميس الساعة 4">'+esc(s.notice||'')+'</textarea></div>'+
+  '<div class="field" style="max-width:360px"><label for="noticeStage">الإعلان يظهر لمين</label><select id="noticeStage"><option value="">الكل (على الصفحة الرئيسية)</option>'+(S.grades||[]).map(function(g){return '<option'+(g===(s.noticeStage||'')?' selected':'')+'>'+esc(g)+'</option>'}).join('')+'</select><span class="hint">لو اخترت مرحلة، الإعلان هيظهر بس لولي الأمر لما يكتب كود طالب في المرحلة دي.</span></div>';
+}
+function pNotes(){var s=S.site;s.notes=s.notes||[];
+  var h='<h3>'+ic('pin')+' الملاحظات</h3><p class="hint">اكتب ملاحظة واختار تظهر لمين. ملاحظات "الكل" بتظهر على الصفحة الرئيسية لكل الناس، وملاحظات المرحلة بتظهر بس لولي الأمر لما يكتب كود طالب في المرحلة دي. بعد ما تخلص دوس "حفظ" تحت.</p>';
+  h+='<div class="field"><label for="ntNew">ملاحظة جديدة</label><textarea id="ntNew" style="min-height:90px" placeholder="مثلاً: الحصة الجاية مراجعة على الباب الأول"></textarea></div>';
+  h+='<div class="row"><div class="field" style="flex:0 1 300px"><label for="ntStage">تظهر لمين</label><select id="ntStage"><option value="">الكل (على الصفحة الرئيسية)</option>'+(S.grades||[]).map(function(g){return '<option>'+esc(g)+'</option>'}).join('')+'</select></div><button class="btn acc" data-act="addNote" style="align-self:flex-end">'+ic('plus',16)+' إضافة الملاحظة</button></div>';
+  h+='<h3>الملاحظات الحالية ('+s.notes.length+')</h3>';
+  if(!s.notes.length)return h+'<div class="empty">لسه مفيش ملاحظات.</div>';
+  h+='<div class="list">';
+  s.notes.forEach(function(x,i){h+='<div class="li" style="align-items:flex-start"><div class="field" style="flex:3 1 260px"><label for="nt'+i+'">النص</label><textarea id="nt'+i+'" data-nt="'+i+'|text" style="min-height:70px">'+esc(x.text||'')+'</textarea></div><div class="field" style="flex:1 1 180px"><label for="nts'+i+'">تظهر لمين</label><select id="nts'+i+'" data-nt="'+i+'|stage"><option value="">الكل (الصفحة الرئيسية)</option>'+(S.grades||[]).map(function(g){return '<option'+(g===x.stage?' selected':'')+'>'+esc(g)+'</option>'}).join('')+'</select></div><button class="btn danger sm" data-act="rmNote" data-i="'+i+'" style="align-self:center">'+ic('trash',14)+' حذف</button></div>'});
+  return h+'</div>';
 }
 function pMedia(){var s=S.site;S.media=S.media||[];
   var h='<h3>'+ic('image')+' صور الجداول</h3><p class="hint">ارفع صورة الجدول من جهازك، وهتظهر لأولياء الأمور في الصفحة. بعد ما ترفع الصور دوس "حفظ" تحت.</p>';
@@ -1452,6 +1475,8 @@ document.addEventListener('click',function(e){
   if(a==='cancelUpload'){up.status='';up.res=null;up.rows=null;up.batch=null;render();return}
   if(a==='applyBatch')return applyBatch();
   if(a==='applyExam')return applyExam();
+  if(a==='addNote'){var nt=val('ntNew').trim();if(!nt){toast('اكتب الملاحظة الأول');return}S.site.notes=S.site.notes||[];S.site.notes.unshift({id:sid(),text:nt,stage:val('ntStage')});markDirty();render();toast('اتضافت الملاحظة، دوس حفظ');return}
+  if(a==='rmNote'){S.site.notes.splice(+t.dataset.i,1);markDirty();render();return}
   if(a==='askDelStage'){var gs=val('stageDelSel');if(!gs)return;stageDel={grade:gs,err:'',busy:false};render();var sp=document.getElementById('stagePin');if(sp)sp.focus();return}
   if(a==='cancelDelStage'){stageDel=null;render();return}
   if(a==='doDelStage')return doDelStage();
@@ -1500,6 +1525,8 @@ document.addEventListener('change',function(e){
   if(t.dataset.uactive){var au=S.users.find(function(x){return x.id===t.dataset.uactive});if(au){if(!t.checked&&au.role==='admin'&&adminCount()<=1){t.checked=true;toast('لازم يفضل أدمن واحد على الأقل');return}au.active=t.checked;markDirty();render()}return}
   if(t.dataset.urole){var ru=S.users.find(function(x){return x.id===t.dataset.urole});if(ru){if(t.value!=='admin'&&ru.role==='admin'&&adminCount()<=1){t.value='admin';toast('لازم يفضل أدمن واحد على الأقل');return}ru.role=t.value;if(ru.role==='admin')ru.perms=PERMS.map(function(p){return p[0]});markDirty();render()}return}
   if(t.id==='noticeTa'){S.site.notice=t.value;markDirty();refreshBar();return}
+  if(t.id==='noticeStage'){S.site.noticeStage=t.value;markDirty();refreshBar();return}
+  if(t.dataset.nt){var pr=t.dataset.nt.split('|'),nx=(S.site.notes||[])[+pr[0]];if(nx){nx[pr[1]]=pr[1]==='text'?t.value.trim():t.value;markDirty();refreshBar()}return}
   if(t.dataset.lnk){var pl=t.dataset.lnk.split('|');S.site.links[+pl[0]][pl[1]]=t.value.trim();markDirty();refreshBar();return}
   if(t.dataset.med){var pm=t.dataset.med.split('|'),mm=(S.media||[]).find(function(m){return m.id===pm[0]});if(mm){mm[pm[1]]=pm[1]==='caption'?t.value.trim():t.value;markDirty();refreshBar()}return}
   if(t.id==='mFile'&&t.files[0]){var cap=val('mCap').trim(),stg=val('mStage');mediaBusy=true;render();
