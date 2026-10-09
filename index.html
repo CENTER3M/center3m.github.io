@@ -266,6 +266,12 @@ textarea{min-height:90px;resize:vertical}
 .att-search .ico{position:absolute;inset-inline-start:14px;color:var(--muted);pointer-events:none}
 .att-search input{padding-inline-start:44px;font-size:17px;min-height:48px}
 .li[hidden],.empty[hidden]{display:none!important}
+.vchart{display:grid;grid-template-columns:repeat(14,1fr);gap:6px;align-items:end;height:170px;padding:8px 4px 0;direction:ltr}
+.vbar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;min-width:0}
+.vbar i{display:block;width:100%;max-width:26px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,var(--mint),var(--cyan));animation:growUp .8s cubic-bezier(.2,.8,.2,1) both}
+.vbar span{font-size:11px;color:var(--muted)}
+.vbar small{font-size:11px;color:var(--muted)}
+@keyframes growUp{from{height:0}}
 /* exams */
 .exams{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .exams-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;flex-wrap:wrap}
@@ -407,10 +413,10 @@ function randHex(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return hex
 function hashPw(pw,salt,iter){var enc=new TextEncoder();return crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveBits']).then(function(k){return crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(salt),iterations:iter,hash:'SHA-256'},k,256)}).then(hex)}
 function makeCred(pw){var salt=randHex(16),iter=150000;return hashPw(pw,salt,iter).then(function(h){return {salt:salt,iter:iter,hash:h}})}
 function uid(){return 'u'+randHex(6)}
-var ICO={award:'<circle cx="12" cy="9" r="6"/><path d="M8.2 13.8 7 22l5-3 5 3-1.2-8.2"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',check:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',student:'<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',text:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',palette:'<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 0 0 0 20c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7h2a5.6 5.6 0 0 0 5.5-5.5C22 6 17.5 2 12 2z"/>',save:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',alert:'<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',plus:'<path d="M12 5v14"/><path d="M5 12h14"/>'};
+var ICO={chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',award:'<circle cx="12" cy="9" r="6"/><path d="M8.2 13.8 7 22l5-3 5 3-1.2-8.2"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',check:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',student:'<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',text:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',palette:'<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 0 0 0 20c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7h2a5.6 5.6 0 0 0 5.5-5.5C22 6 17.5 2 12 2z"/>',save:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',alert:'<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',plus:'<path d="M12 5v14"/><path d="M5 12h14"/>'};
 function ic(n,s){return '<svg class="ico" viewBox="0 0 24 24" width="'+(s||18)+'" height="'+(s||18)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICO[n]||'')+'</svg>'}
-var TAB_IC={exams:'award',upload:'upload',att:'check',media:'image',notice:'megaphone',links:'link',stu:'student',del:'trash',site:'text',look:'palette',backup:'save',users:'users'};
-function allowedTabs(){var all=PERMS.slice(0,2).concat([['exams','درجات الامتحانات'],['media','صور الجداول'],['notice','إعلان الصفحة'],['links','الروابط']],PERMS.slice(2),[['users','الموظفين والصلاحيات']]);if(!me)return [];if(me.role==='admin')return all;return all.filter(function(t){var need=(t[0]==='media'||t[0]==='notice'||t[0]==='links')?'site':t[0]==='exams'?'upload':t[0];return (me.perms||[]).indexOf(need)>=0})}
+var TAB_IC={stats:'chart',exams:'award',upload:'upload',att:'check',media:'image',notice:'megaphone',links:'link',stu:'student',del:'trash',site:'text',look:'palette',backup:'save',users:'users'};
+function allowedTabs(){var all=PERMS.slice(0,2).concat([['exams','درجات الامتحانات'],['media','صور الجداول'],['notice','إعلان الصفحة'],['links','الروابط']],PERMS.slice(2),[['users','الموظفين والصلاحيات'],['stats','عدد الزيارات']]);if(!me)return [];if(me.role==='admin')return all;return all.filter(function(t){var need=(t[0]==='media'||t[0]==='notice'||t[0]==='links')?'site':t[0]==='exams'?'upload':t[0];return (me.perms||[]).indexOf(need)>=0})}
 function markDirty(){dirty=true}
 
 function applyTheme(){
@@ -555,7 +561,7 @@ function adminView(){
   var isAdmin=me.role==='admin';
   var h='<div class="wrap page"><div class="who"><div><div class="eyebrow">'+(isAdmin?'لوحة تحكم الأدمن':'لوحة الموظف')+'</div><h2 style="font-size:clamp(24px,3.4vw,32px)">الإعدادات</h2></div><div class="row" style="align-items:center"><span>'+esc(me.name||me.u)+'</span><span class="badge">'+(isAdmin?'أدمن':'موظف')+'</span><button class="btn plain sm" data-act="logout">'+ic('logout',15)+' خروج</button></div></div><p class="lead">الحضور بيتحفظ يوم بيوم ويتجمع على بعضه، وأي شيت جديد بيتضاف على اللي قبله. لما تدوس "حفظ" بيظهر لأولياء الأمور على طول.</p>';
   h+='<div class="tabs" role="tablist">'+tabs.map(function(t){return '<button data-tab="'+t[0]+'" class="'+(adminTab===t[0]?'on':'')+'">'+ic(TAB_IC[t[0]]||'settings',16)+'<span>'+t[1]+'</span></button>'}).join('')+'</div>';
-  h+='<div class="panel">'+({exams:pExams,upload:pUpload,att:pAtt,media:pMedia,notice:pNotice,links:pLinks,stu:pStu,site:pSite,news:pNews,team:pTeam,look:pLook,backup:pBackup,users:pUsers,del:pDel}[adminTab])()+'</div>';
+  h+='<div class="panel">'+({stats:pStats,exams:pExams,upload:pUpload,att:pAtt,media:pMedia,notice:pNotice,links:pLinks,stu:pStu,site:pSite,news:pNews,team:pTeam,look:pLook,backup:pBackup,users:pUsers,del:pDel}[adminTab])()+'</div>';
   if(delReq)h+=delModal();
   h+='<div class="savebar"><span>'+(dirty?'فيه تعديلات لسه متحفظتش':'كل التعديلات محفوظة')+'</span><div class="row">'+(dirty?'<button class="btn ghost sm" data-act="discard">إلغاء التعديلات</button>':'')+'<button class="btn main" data-act="save" '+(dirty&&!saving?'':'disabled')+'>'+(saving?'جاري الحفظ…':'حفظ')+'</button></div></div>';
   return h+'</div>';
@@ -676,7 +682,7 @@ function siteFromDoc(dd,st){if(!dd)return;if(dd.logo)st.logo=dd.logo;if(dd.site)
 function applySettings(qs,st){var media=[];qs.forEach(function(doc){var x=doc.data();if(doc.id==='site')siteFromDoc(x,st);else if(doc.id.indexOf('img_')===0&&x&&x.data){media.push({id:doc.id.slice(4),caption:x.caption||'',stage:x.stage||'',data:x.data,order:x.order||0})}});st.media=media}
 function loadAll(){
   var q=[db.collection('settings').get(),db.collection('students').get(),db.collection('uploads').orderBy('ts','desc').limit(50).get()];
-  if(me.role==='admin')q.push(db.collection('users').get());
+  if(me.role==='admin'){q.push(db.collection('users').get());loadStats()}
   return Promise.all(q).then(function(r){
     var st=clone(STATE);applySettings(r[0],st);
     st.students=[];st.attendance={};st.exams={};
@@ -690,7 +696,7 @@ function loadAll(){
 function loadMe(id){
   return db.doc('users/'+id).get().then(function(snap){
     if(!snap.exists||snap.data().active===false){return auth.signOut().then(function(){throw {code:'c3m/inactive'}})}
-    var x=snap.data();x.id=id;me=x;return loadAll();
+    var x=snap.data();x.id=id;me=x;try{localStorage.setItem('c3m_staff','1')}catch(e){}return loadAll();
   });
 }
 function doLogin(){
@@ -1246,6 +1252,38 @@ function doDelEx(){
   }).catch(function(){exDel.busy=false;exDel.err='المتصفح ده مش بيدعم الحذف. جرب Chrome أو Safari حديث.';render()});
 }
 
+
+/* ---------- visit counter (admin only) ---------- */
+var STATS=null,statsErr='';
+function countVisit(kind){
+  try{if(localStorage.getItem('c3m_staff'))return}catch(x){}
+  if(kind==='v'){try{if(sessionStorage.getItem('c3m_v'))return;sessionStorage.setItem('c3m_v','1')}catch(x){}}
+  else{try{var k='c3m_q_'+trackCode;if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(x){}}
+  try{var inc=firebase.firestore.FieldValue.increment(1),o={};o[kind]=inc;var b=db.batch();
+    b.set(db.doc('stats/total'),o,{merge:true});b.set(db.doc('stats/d_'+today()),o,{merge:true});b.commit().catch(function(){})}catch(x){}
+}
+function loadStats(){
+  return db.collection('stats').get().then(function(qs){var st={total:{v:0,q:0},days:{}};
+    qs.forEach(function(d){var x=d.data()||{};if(d.id==='total')st.total={v:x.v||0,q:x.q||0};else if(/^d_/.test(d.id))st.days[d.id.slice(2)]={v:x.v||0,q:x.q||0}});
+    STATS=st;statsErr='';if(adminTab==='stats')render()}).catch(function(e){statsErr=e&&e.code==='permission-denied'?'rules':'err';if(adminTab==='stats')render()});
+}
+function dayKey(off){var d=new Date();d.setDate(d.getDate()-off);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function pStats(){
+  var h='<h3>'+ic('chart',18)+' عدد الزيارات</h3><p class="hint">الصفحة دي بتظهرلك إنت بس (الأدمن). الزيارة بتتحسب مرة واحدة لكل ولي أمر لما يفتح الموقع، والبحث بيتحسب لما يدوّر على كود طالب موجود. زياراتك إنت والموظفين مش بتتحسب.</p>';
+  if(statsErr==='rules')return h+'<div class="warn">لازم تحدّث قواعد Firebase (Rules) الأول عشان العداد يشتغل. الخطوات في الرسالة اللي بعتهالك.</div><button class="btn plain sm" data-act="reloadStats">جرب تاني</button>';
+  if(statsErr)return h+'<div class="msg err">مقدرتش أجيب الأرقام. اتأكد من النت.</div><button class="btn plain sm" data-act="reloadStats">جرب تاني</button>';
+  if(!STATS)return h+'<div class="msg info">جاري تحميل الأرقام…</div>';
+  var sum=function(n,k){var t=0;for(var i=0;i<n;i++){var d=STATS.days[dayKey(i)];if(d)t+=d[k]||0}return t};
+  var td=STATS.days[dayKey(0)]||{v:0,q:0},yd=STATS.days[dayKey(1)]||{v:0,q:0};
+  h+='<div class="tiles num" style="margin-top:0"><div class="tile"><small>النهارده</small><b>'+td.v+'</b></div><div class="tile"><small>امبارح</small><b>'+yd.v+'</b></div><div class="tile"><small>آخر 7 أيام</small><b>'+sum(7,'v')+'</b></div><div class="tile"><small>آخر 30 يوم</small><b>'+sum(30,'v')+'</b></div><div class="tile"><small>الإجمالي من البداية</small><b>'+STATS.total.v+'</b></div><div class="tile p"><small>بحث عن طلاب (الإجمالي)</small><b>'+STATS.total.q+'</b></div></div>';
+  var rows=[],mx=1;for(var i=13;i>=0;i--){var k=dayKey(i),d=STATS.days[k]||{v:0,q:0};rows.push([k,d]);if(d.v>mx)mx=d.v}
+  h+='<h3>آخر 14 يوم</h3><div class="vchart">';
+  rows.forEach(function(r){var pc=Math.round(r[1].v/mx*100);h+='<div class="vbar" title="'+fmtD(r[0])+': '+r[1].v+' زيارة، '+r[1].q+' بحث"><span class="num">'+r[1].v+'</span><i style="height:'+Math.max(pc,r[1].v?4:1)+'%"></i><small>'+(+r[0].slice(8))+'</small></div>'});
+  h+='</div><div class="list">';
+  rows.slice().reverse().forEach(function(r){h+='<div class="li"><div class="grow"><b>'+dayName(r[0])+' '+fmtD(r[0])+'</b></div><span class="num">'+r[1].v+' زيارة · '+r[1].q+' بحث</span></div>'});
+  return h+'</div><button class="btn plain sm" data-act="reloadStats" style="align-self:flex-start">تحديث الأرقام</button>';
+}
+
 /* ---------- events ---------- */
 document.addEventListener('click',function(e){
   var t=e.target.closest('button,[data-go]');if(!t)return;
@@ -1317,6 +1355,7 @@ document.addEventListener('click',function(e){
   if(a==='cancelUpload'){up.status='';up.res=null;up.rows=null;up.batch=null;render();return}
   if(a==='applyBatch')return applyBatch();
   if(a==='applyExam')return applyExam();
+  if(a==='reloadStats'){STATS=null;statsErr='';render();loadStats();return}
   if(a==='cancelExam'){ex.parsed=null;ex.res=null;ex.status='';render();return}
   if(a==='askDelEx'){exDel={id:t.dataset.ex,err:'',busy:false};render();var pe=document.getElementById('exPin');if(pe)pe.focus();return}
   if(a==='cancelDelEx'){exDel=null;render();return}
@@ -1331,7 +1370,7 @@ document.addEventListener('submit',function(e){if(e.target.id==='loginForm'){e.p
   trackLoading=true;render();var code=trackCode;
   db.collection('students').doc(code).get().then(function(snap){if(code!==trackCode)return;
     STATE.students=[];STATE.attendance={};STATE.exams={};
-    if(snap.exists){var x=snap.data();STATE.students=[{code:code,name:x.name||'',grade:x.grade||'',group:x.group||''}];STATE.attendance[code]=x.att||{};STATE.exams[code]=x.ex||{}}
+    if(snap.exists){countVisit('q');var x=snap.data();STATE.students=[{code:code,name:x.name||'',grade:x.grade||'',group:x.group||''}];STATE.attendance[code]=x.att||{};STATE.exams[code]=x.ex||{}}
     trackLoading=false;S=clone(STATE);render()}).catch(function(err){trackLoading=false;render();toast(fbErr(err))});}});
 document.addEventListener('change',function(e){
   var t=e.target;
@@ -1420,6 +1459,7 @@ function save(){
 
 /* ---------- boot ---------- */
 var h=location.hash.replace('#','');if(h==='login'||h==='staff')view='login';
+setTimeout(function(){if(!me&&view!=='login')countVisit('v')},1500);
 render();
 db.collection('settings').get().then(function(qs){applySettings(qs,STATE);if(!me)S=clone(STATE);else{var keep=S.media;applySettings(qs,S);if(dirty)S.media=keep}render()}).catch(function(){});
 db.doc('meta/setup').get().then(function(s){setupDone=s.exists;render()}).catch(function(){setupDone=true;render()});
