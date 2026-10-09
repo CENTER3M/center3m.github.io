@@ -261,6 +261,25 @@ textarea{min-height:90px;resize:vertical}
   .logo-block img{width:150px;height:150px}
 }
 
+
+/* exams */
+.exams{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.exams-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;flex-wrap:wrap}
+.exams-head h3{display:flex;align-items:center;gap:8px;font-size:18px}
+.exams-head h3 .ico{color:var(--accent)}
+.ex-avg{font-size:14px;color:var(--muted)}
+.ex-avg b{color:var(--fg);font-size:16px}
+.ex-row{display:grid;grid-template-columns:1fr auto;gap:6px 14px;padding:12px 16px;border-top:1px solid var(--line);align-items:center}
+.ex-row .t b{display:block;font-weight:600}
+.ex-row .t small{color:var(--muted);font-size:13px}
+.ex-score{font-family:var(--display);font-size:22px;font-weight:700;direction:ltr;white-space:nowrap;color:var(--c,var(--fg))}
+.ex-score small{font-size:14px;color:var(--muted);font-weight:500}
+.ex-bar{grid-column:1/-1;height:6px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.ex-bar i{display:block;height:100%;border-radius:99px;background:var(--c,var(--accent))}
+.anim .ex-row{animation:slideIn .45s ease-out both;animation-delay:calc(.35s + var(--i,0)*.06s)}
+.anim .ex-bar i{animation:grow 1.2s cubic-bezier(.2,.8,.2,1) .5s both}
+.g-a{--c:var(--ok)} .g-b{--c:var(--accent)} .g-c{--c:var(--late)} .g-d{--c:var(--bad)}
+
 /* ===== motion ===== */
 @keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
@@ -384,10 +403,10 @@ function randHex(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return hex
 function hashPw(pw,salt,iter){var enc=new TextEncoder();return crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveBits']).then(function(k){return crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(salt),iterations:iter,hash:'SHA-256'},k,256)}).then(hex)}
 function makeCred(pw){var salt=randHex(16),iter=150000;return hashPw(pw,salt,iter).then(function(h){return {salt:salt,iter:iter,hash:h}})}
 function uid(){return 'u'+randHex(6)}
-var ICO={settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',check:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',student:'<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',text:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',palette:'<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 0 0 0 20c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7h2a5.6 5.6 0 0 0 5.5-5.5C22 6 17.5 2 12 2z"/>',save:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',alert:'<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',plus:'<path d="M12 5v14"/><path d="M5 12h14"/>'};
+var ICO={award:'<circle cx="12" cy="9" r="6"/><path d="M8.2 13.8 7 22l5-3 5 3-1.2-8.2"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',check:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',student:'<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',text:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',palette:'<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 0 0 0 20c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7h2a5.6 5.6 0 0 0 5.5-5.5C22 6 17.5 2 12 2z"/>',save:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',alert:'<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',plus:'<path d="M12 5v14"/><path d="M5 12h14"/>'};
 function ic(n,s){return '<svg class="ico" viewBox="0 0 24 24" width="'+(s||18)+'" height="'+(s||18)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICO[n]||'')+'</svg>'}
-var TAB_IC={upload:'upload',att:'check',media:'image',notice:'megaphone',links:'link',stu:'student',del:'trash',site:'text',look:'palette',backup:'save',users:'users'};
-function allowedTabs(){var all=PERMS.slice(0,2).concat([['media','صور الجداول'],['notice','إعلان الصفحة'],['links','الروابط']],PERMS.slice(2),[['users','الموظفين والصلاحيات']]);if(!me)return [];if(me.role==='admin')return all;return all.filter(function(t){var need=(t[0]==='media'||t[0]==='notice'||t[0]==='links')?'site':t[0];return (me.perms||[]).indexOf(need)>=0})}
+var TAB_IC={exams:'award',upload:'upload',att:'check',media:'image',notice:'megaphone',links:'link',stu:'student',del:'trash',site:'text',look:'palette',backup:'save',users:'users'};
+function allowedTabs(){var all=PERMS.slice(0,2).concat([['exams','درجات الامتحانات'],['media','صور الجداول'],['notice','إعلان الصفحة'],['links','الروابط']],PERMS.slice(2),[['users','الموظفين والصلاحيات']]);if(!me)return [];if(me.role==='admin')return all;return all.filter(function(t){var need=(t[0]==='media'||t[0]==='notice'||t[0]==='links')?'site':t[0]==='exams'?'upload':t[0];return (me.perms||[]).indexOf(need)>=0})}
 function markDirty(){dirty=true}
 
 function applyTheme(){
@@ -413,7 +432,7 @@ function render(){
 }
 var lastAnimKey='';
 function motion(){
-  ['.tile','.cal .d:not(.x)','.log-row'].forEach(function(q){Array.prototype.forEach.call(root.querySelectorAll(q),function(el,i){el.style.setProperty('--i',Math.min(i,40))})});
+  ['.tile','.cal .d:not(.x)','.log-row','.ex-row'].forEach(function(q){Array.prototype.forEach.call(root.querySelectorAll(q),function(el,i){el.style.setProperty('--i',Math.min(i,40))})});
   if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   Array.prototype.forEach.call(root.querySelectorAll('.tiles b'),function(b){var m=b.textContent.match(/^(\d+)(%?)$/);if(!m)return;var end=+m[1];if(!end)return;var t0=null,dur=1100;
     function step(t){if(!t0)t0=t;var k=Math.min(1,(t-t0)/dur);k=1-Math.pow(1-k,3);b.textContent=Math.round(end*k)+m[2];if(k<1)requestAnimationFrame(step)}b.textContent='0'+m[2];setTimeout(function(){requestAnimationFrame(step)},300)});
@@ -498,6 +517,7 @@ function trackView(d){
     h+='<div class="scard"><div><small>اسم الطالب</small><b>'+esc(stu.name)+'</b></div><div class="stage"><small>المرحلة</small><b>'+esc(stu.grade||'غير محددة')+'</b></div><div><small>كود الطالب</small><b class="num" dir="ltr">'+esc(stu.code)+'</b></div>'+(stu.group?'<div><small>المجموعة</small><b>'+esc(stu.group)+'</b></div>':'')+'</div>';
     h+='<div class="tiles num"><div class="tile"><small>نسبة الحضور</small><b>'+rate+'%</b><div class="meter"><i style="width:'+rate+'%"></i></div></div>'+
       '<div class="tile p"><small>حضور</small><b>'+c.p+'</b></div><div class="tile a"><small>غياب</small><b>'+c.a+'</b></div><div class="tile l"><small>تأخير</small><b>'+c.l+'</b></div><div class="tile e"><small>غياب بعذر</small><b>'+c.e+'</b></div><div class="tile k"><small>طرد من الحصة</small><b>'+c.k+'</b></div></div>';
+    h+=examsHtml(d,stu);
     if(!dates.length){h+='<div class="log"><div class="empty">لسه مفيش حصص متسجلة للطالب ده.</div></div>'}
     else{
       var months=[];dates.forEach(function(x){var m=x.slice(0,7);if(months.indexOf(m)<0)months.push(m)});
@@ -531,7 +551,7 @@ function adminView(){
   var isAdmin=me.role==='admin';
   var h='<div class="wrap page"><div class="who"><div><div class="eyebrow">'+(isAdmin?'لوحة تحكم الأدمن':'لوحة الموظف')+'</div><h2 style="font-size:clamp(24px,3.4vw,32px)">الإعدادات</h2></div><div class="row" style="align-items:center"><span>'+esc(me.name||me.u)+'</span><span class="badge">'+(isAdmin?'أدمن':'موظف')+'</span><button class="btn plain sm" data-act="logout">'+ic('logout',15)+' خروج</button></div></div><p class="lead">الحضور بيتحفظ يوم بيوم ويتجمع على بعضه، وأي شيت جديد بيتضاف على اللي قبله. لما تدوس "حفظ" بيظهر لأولياء الأمور على طول.</p>';
   h+='<div class="tabs" role="tablist">'+tabs.map(function(t){return '<button data-tab="'+t[0]+'" class="'+(adminTab===t[0]?'on':'')+'">'+ic(TAB_IC[t[0]]||'settings',16)+'<span>'+t[1]+'</span></button>'}).join('')+'</div>';
-  h+='<div class="panel">'+({upload:pUpload,att:pAtt,media:pMedia,notice:pNotice,links:pLinks,stu:pStu,site:pSite,news:pNews,team:pTeam,look:pLook,backup:pBackup,users:pUsers,del:pDel}[adminTab])()+'</div>';
+  h+='<div class="panel">'+({exams:pExams,upload:pUpload,att:pAtt,media:pMedia,notice:pNotice,links:pLinks,stu:pStu,site:pSite,news:pNews,team:pTeam,look:pLook,backup:pBackup,users:pUsers,del:pDel}[adminTab])()+'</div>';
   if(delReq)h+=delModal();
   h+='<div class="savebar"><span>'+(dirty?'فيه تعديلات لسه متحفظتش':'كل التعديلات محفوظة')+'</span><div class="row">'+(dirty?'<button class="btn ghost sm" data-act="discard">إلغاء التعديلات</button>':'')+'<button class="btn main" data-act="save" '+(dirty&&!saving?'':'disabled')+'>'+(saving?'جاري الحفظ…':'حفظ')+'</button></div></div>';
   return h+'</div>';
@@ -650,8 +670,8 @@ function loadAll(){
   if(me.role==='admin')q.push(db.collection('users').get());
   return Promise.all(q).then(function(r){
     var st=clone(STATE);applySettings(r[0],st);
-    st.students=[];st.attendance={};
-    r[1].forEach(function(doc){var x=doc.data();st.students.push({code:String(x.code||doc.id),name:x.name||'',grade:x.grade||'',group:x.group||'',phone:x.phone||''});if(x.att&&Object.keys(x.att).length)st.attendance[String(x.code||doc.id)]=x.att});
+    st.students=[];st.attendance={};st.exams={};
+    r[1].forEach(function(doc){var x=doc.data();st.students.push({code:String(x.code||doc.id),name:x.name||'',grade:x.grade||'',group:x.group||'',phone:x.phone||''});if(x.att&&Object.keys(x.att).length)st.attendance[String(x.code||doc.id)]=x.att;if(x.ex&&Object.keys(x.ex).length)st.exams[String(x.code||doc.id)]=x.ex});
     st.students.sort(function(a,b){return (parseInt(a.code,10)||0)-(parseInt(b.code,10)||0)});
     st.uploads=[];r[2].forEach(function(doc){var x=doc.data();delete x.ts;x.id=doc.id;st.uploads.push(x)});
     if(r[3]){st.users=[];r[3].forEach(function(doc){var x=doc.data();x.id=doc.id;st.users.push(x)})}else st.users=[clone(me)];
@@ -1035,6 +1055,176 @@ function applyRes(r,file,grade){
   S.uploads=S.uploads.slice(0,50);
 }
 
+
+/* ---------- exam grades ---------- */
+var ex={title:'',date:'',max:'',status:'',msg:'',file:'',parsed:null,res:null},exDel=null;
+function gradeCls(p){return p>=85?'g-a':p>=65?'g-b':p>=50?'g-c':'g-d'}
+function fmtNum(n){return (Math.round(n*100)/100).toString()}
+function examList(code,d){var m=(d.exams||{})[code]||{};return Object.keys(m).map(function(k){var x=m[k];return {id:k,t:x.t,d:x.d,s:x.s,m:x.m,n:x.n||''}}).sort(function(a,b){return (b.d||'').localeCompare(a.d||'')})}
+function examsHtml(d,stu){
+  var L=examList(stu.code,d);if(!L.length)return '';
+  var ps=L.filter(function(x){return x.s!=null&&x.m}).map(function(x){return x.s/x.m*100});
+  var avg=ps.length?Math.round(ps.reduce(function(a,b){return a+b},0)/ps.length):null;
+  var h='<section class="exams"><div class="exams-head"><h3>'+ic('award',20)+' درجات الامتحانات</h3>'+(avg!=null?'<span class="ex-avg">المتوسط <b class="num '+gradeCls(avg)+'" style="color:var(--c)">'+avg+'%</b></span>':'')+'</div>';
+  L.forEach(function(x){
+    var meta=(x.d?dayName(x.d)+' '+fmtD(x.d):'')+(x.n?' · '+esc(x.n):'');
+    if(x.s==null){h+='<div class="ex-row"><div class="t"><b>'+esc(x.t)+'</b><small class="num">'+meta+'</small></div><span class="chip a">غاب عن الامتحان</span></div>';return}
+    var pc=x.m?Math.max(0,Math.min(100,Math.round(x.s/x.m*100))):null,cl=pc!=null?gradeCls(pc):'';
+    h+='<div class="ex-row '+cl+'"><div class="t"><b>'+esc(x.t)+'</b><small class="num">'+meta+(pc!=null?' · '+pc+'%':'')+'</small></div><div class="ex-score num">'+fmtNum(x.s)+(x.m?'<small> / '+fmtNum(x.m)+'</small>':'')+'</div>'+(pc!=null?'<div class="ex-bar"><i style="width:'+pc+'%"></i></div>':'')+'</div>';
+  });
+  return h+'</section>';
+}
+function examId(title,date){var k=normAr(title)+'|'+date,h=0;for(var i=0;i<k.length;i++){h=(h*31+k.charCodeAt(i))|0}return 'e'+(h>>>0).toString(36)}
+var ABS_RE=/^(غ|غائب|غايب|غياب|لم يحضر|ما حضرش|absent|abs|a|-|—)$/;
+function parseScore(v){
+  if(v==null||v==='')return null;
+  if(typeof v==='number')return isFinite(v)?{s:v}:null;
+  var t=normAr(v).replace(/٫|,/g,'.');if(!t)return null;
+  if(ABS_RE.test(t))return {abs:true};
+  var m=t.match(/^(\d+(?:\.\d+)?)\s*(?:\/|من|of)\s*(\d+(?:\.\d+)?)$/);if(m)return {s:+m[1],m:+m[2]};
+  if(/^\d+(?:\.\d+)?$/.test(t))return {s:+t};
+  return null}
+function maxFromHeader(t){var m=digits(String(t)).match(/(?:من|\/|out of|\()\s*(\d{1,4})\s*\)?/i);return m?+m[1]:null}
+var SCORE_H=/درج|نتيج|score|mark|grade|امتحان|اختبار|كويز|quiz|exam|test|تقييم|مجموع|total/;
+var SKIP_H=/^م$|مسلسل|^#$|^n$|^no$|تليفون|موبايل|هاتف|phone|mobile|ولي|ملاحظ|note|مجموعه|group|^الصف|المرحله|stage|تاريخ|date/;
+function examHeader(r){
+  if((r||[]).some(function(c){return /^\d{2,8}$/.test(cleanCode(c))}))return null;
+  var cc=-1,nc=-1,sc=[];
+  (r||[]).forEach(function(cell,j){var t=normAr(cell);if(!t)return;
+    if(cc<0&&/كود|code|^id$|رقم الطالب|^الرقم$|^رقم$/.test(t)){cc=j;return}
+    if(nc<0&&/^(ال)?اسم|name/.test(t)){nc=j;return}
+    if(SKIP_H.test(t))return;
+    sc.push({j:j,h:String(cell).trim(),score:SCORE_H.test(t)});
+  });
+  if(cc<0&&nc<0)return null;
+  return {code:cc,name:nc,cand:sc};
+}
+function parseExamSheet(rows){
+  var out={cols:[],recs:[],skipped:[]},hdr=null,hi=-1;
+  for(var i=0;i<Math.min(rows.length,30);i++){var hh=examHeader(rows[i]);if(hh&&hh.cand.length){hdr=hh;hi=i;break}}
+  if(!hdr)return null;
+  var body=rows.slice(hi+1);
+  // keep candidate columns whose values look like scores
+  var cols=hdr.cand.filter(function(c){var n=0,ok=0;body.forEach(function(r){var v=(r||[])[c.j];if(v===''||v==null)return;n++;if(parseScore(v))ok++});return n&&ok/n>=0.6&&(c.score||ok>=2)});
+  if(!cols.length)return null;
+  out.cols=cols.map(function(c){return {key:'c'+c.j,title:c.h.replace(/\s*[\(\[]\s*[\d٠-٩]+\s*[\)\]]\s*$/,'').replace(/\s*(من|\/)\s*[\d٠-٩]+\s*$/,'').trim()||c.h,max:maxFromHeader(c.h)}});
+  body.forEach(function(r){r=r||[];var code=hdr.code>=0?cleanCode(r[hdr.code]):'',name=hdr.name>=0?fixName(r[hdr.name]):'';
+    if(!code&&!name)return;if(LABEL_RE.test(normAr(name)))return;if(code&&!/^\d+$/.test(code)){if(!name)return;code=''}
+    cols.forEach(function(c){var v=r[c.j];var sc=parseScore(v);if(!sc){if(v!==''&&v!=null&&String(v).trim())out.skipped.push({text:[code,name].filter(Boolean).join(' - ')+': '+v,why:'الدرجة مش مفهومة'});return}
+      out.recs.push({code:code,name:name,key:'c'+c.j,s:sc.abs?null:sc.s,m:sc.m||null,line:[code,name].filter(Boolean).join(' - ')})});
+  });
+  return out;
+}
+function parseExamLoose(rows){
+  var known={};(S.students||[]).forEach(function(s){known[String(s.code)]=1});
+  var out={cols:[{key:'c0',title:'',max:null}],recs:[],skipped:[]},hmax=null;
+  rows.forEach(function(cells){
+    var toks=[];(cells||[]).forEach(function(c){digits(String(c)).split(/\s+/).forEach(function(x){if(x)toks.push(x)})});
+    var line=toks.join(' ');
+    if(!hmax&&/درج|نهايه|النهائيه/.test(normAr(line))){var hm=maxFromHeader(line);if(hm)hmax=hm}
+    var ci=-1;toks.forEach(function(x,i){if(ci<0&&known[x])ci=i});
+    if(ci<0)toks.forEach(function(x,i){if(ci<0&&i<=2&&/^\d{3,8}$/.test(x))ci=i});
+    if(ci<0)return;
+    var code=toks[ci],rest=toks.slice(ci+1),sc=null,joined=rest.join(' ');
+    var fr=digits(joined).match(/(\d+(?:[.,]\d+)?)\s*(?:\/|من)\s*(\d+(?:[.,]\d+)?)/);
+    if(fr)sc={s:+fr[1].replace(',','.'),m:+fr[2].replace(',','.')};
+    else{for(var k=rest.length-1;k>=0;k--){var t=normAr(rest[k]);if(ABS_RE.test(t)&&t!=='-'&&t!=='a'){sc={abs:true};break}if(/^\d+(?:[.,]\d+)?$/.test(t)){sc={s:+t.replace(',','.')};break}}}
+    var name=fixName(rest.filter(function(x){return /[؀-ۿ]/.test(x)&&!ABS_RE.test(normAr(x))}).join(' '));
+    if(!sc){out.skipped.push({text:line,why:'مالقيتش درجة في السطر ده'});return}
+    out.recs.push({code:code,name:name,key:'c0',s:sc.abs?null:sc.s,m:sc.m||null,line:code+(name?' - '+name:'')});
+  });
+  if(hmax)out.cols[0].max=hmax;
+  return out;
+}
+function readExam(file){
+  ex.file=file.name;ex.status='loading';ex.parsed=null;ex.res=null;
+  if(!ex.date){var fd=fileDate(file.name);ex.date=fd||today()}
+  render();
+  var saveUp={kind:up.kind,rows:up.rows};
+  parseFile(file).then(function(){
+    var kind=up.kind,rows=up.rows;up.kind=saveUp.kind;up.rows=saveUp.rows;
+    var p=null;
+    if(kind==='pdf')p=parseExamLoose(rows);
+    else{var all={cols:[],recs:[],skipped:[]};rows.forEach(function(sh,si){var q=parseExamSheet(sh)||parseExamLoose(sh.map(function(r){return (r||[]).filter(function(c){return c!==''&&c!=null})}));
+      q.cols.forEach(function(c){c.key='s'+si+c.key;all.cols.push(c)});q.recs.forEach(function(r){r.key='s'+si+r.key;all.recs.push(r)});all.skipped=all.skipped.concat(q.skipped)});p=all}
+    ex.parsed=p;resolveExam();render();
+  }).catch(function(err){up.kind=saveUp.kind;up.rows=saveUp.rows;ex.status='error';ex.msg=errText(err);render()});
+}
+function resolveExam(){
+  var p=ex.parsed;if(!p)return;
+  var byCode={},nameIdx={};(S.students||[]).forEach(function(s){byCode[String(s.code)]=s;var n=normAr(s.name);nameIdx[n]=nameIdx[n]?'@dup':String(s.code)});
+  var inMax=parseFloat(digits(ex.max||'').replace(',','.'))||null;
+  var used=p.cols.filter(function(c){return p.recs.some(function(r){return r.key===c.key})});
+  var exams=used.map(function(c){var title=used.length===1?(ex.title||c.title||''):(c.title||ex.title||'');
+    var vals=p.recs.filter(function(r){return r.key===c.key&&r.m}).map(function(r){return r.m});
+    var cellMax=vals.length?vals.sort(function(a,b){return b-a})[0]:null;
+    return {key:c.key,title:title,max:inMax||c.max||cellMax||null,date:ex.date||today(),recs:[]}});
+  var res={exams:exams,skipped:p.skipped.slice(),total:0};
+  var byKey={};exams.forEach(function(e){byKey[e.key]=e});
+  p.recs.forEach(function(r){var e=byKey[r.key];if(!e)return;
+    var code=r.code;if(code&&!byCode[code]&&r.name){var c2=nameIdx[normAr(r.name)];if(c2&&c2!=='@dup')code=c2}
+    if(!code&&r.name){var c=nameIdx[normAr(r.name)];if(c&&c!=='@dup')code=c}
+    if(!code||!byCode[code]){res.skipped.push({text:r.line,why:code?'الكود مش موجود في الطلاب':'مفيش كود والاسم مش موجود'});return}
+    var m=r.m||e.max;
+    if(r.s!=null&&(r.s<0||(m&&r.s>m))){res.skipped.push({text:r.line+': '+r.s,why:'الدرجة أكبر من الدرجة النهائية ('+m+')'});return}
+    e.recs.push({code:code,name:byCode[code].name,s:r.s,m:m||null});res.total++;
+  });
+  res.exams=exams.filter(function(e){return e.recs.length});
+  ex.res=res;ex.status='preview';
+}
+function pExams(){
+  var h='<h3>'+ic('award',18)+' درجات الامتحانات</h3><p class="hint">ارفع شيت الدرجات (Excel أو PDF). الموقع بيدوّر على كود الطالب ويسجّل درجته، وولي الأمر بيشوفها تحت الحضور والغياب. لو رفعت نفس الامتحان (نفس الاسم والتاريخ) تاني، الدرجات بتتحدث.</p>'+
+  '<div class="row"><div class="field" style="flex:2 1 220px"><label for="exName">اسم الامتحان</label><input type="text" id="exName" placeholder="مثلاً: امتحان شهر أكتوبر" value="'+esc(ex.title)+'"></div>'+
+  '<div class="field" style="flex:1 1 150px"><label for="exDate">تاريخ الامتحان</label><input type="date" id="exDate" value="'+(ex.date||today())+'"></div>'+
+  '<div class="field" style="flex:1 1 140px"><label for="exMax">الدرجة النهائية</label><input type="text" inputmode="decimal" id="exMax" placeholder="مثلاً 50" value="'+esc(ex.max)+'"></div></div>'+
+  '<label class="dropzone" for="exFile">'+ic('upload',34)+'<b>اختار شيت الدرجات من جهازك</b><span>Excel أو PDF</span></label><input type="file" id="exFile" accept=".xlsx,.xls,.csv,.pdf" class="visually-hidden">'+
+  '<details><summary style="cursor:pointer;font-weight:600">أشكال الشيت اللي الموقع بيفهمها</summary><div class="hint" style="margin-top:8px;display:flex;flex-direction:column;gap:6px">'+
+  '<span><b>الشكل العادي:</b> عمود الكود، عمود الاسم، عمود الدرجة. لو عنوان العمود فيه الدرجة النهائية زي "الدرجة من 50" الموقع بياخدها لوحده.</span>'+
+  '<span><b>كذا امتحان في شيت واحد:</b> كل عمود درجات بعنوانه (مثلاً "كويز 1"، "كويز 2") بيتسجل امتحان لوحده باسم العمود.</span>'+
+  '<span>ينفع تكتب الدرجة 18 أو 18/20 أو 18 من 20. ولو الطالب غاب عن الامتحان اكتب غ أو غائب.</span>'+
+  '<span><b>PDF:</b> كل سطر فيه كود الطالب ودرجته.</span></div></details>';
+  if(ex.status==='loading')h+='<div class="msg info">جاري قراءة الملف…</div>';
+  if(ex.status==='error')h+='<div class="msg err">'+esc(ex.msg)+'</div>';
+  if(ex.status==='preview'&&ex.res)h+=examPreview(ex.res);
+  // existing exams
+  var agg={};Object.keys(S.exams||{}).forEach(function(c){var m=S.exams[c];Object.keys(m).forEach(function(k){var x=m[k],a=agg[k]=agg[k]||{id:k,t:x.t,d:x.d,n:0,sum:0,cnt:0,abs:0};a.n++;if(x.s==null)a.abs++;else if(x.m){a.sum+=x.s/x.m*100;a.cnt++}})});
+  var L=Object.keys(agg).map(function(k){return agg[k]}).sort(function(a,b){return (b.d||'').localeCompare(a.d||'')});
+  h+='<h3>الامتحانات المتسجلة ('+L.length+')</h3>';
+  if(!L.length)h+='<div class="empty">لسه مفيش درجات متسجلة.</div>';
+  else{h+='<div class="list">';L.forEach(function(a){h+='<div class="li"><div class="grow"><b>'+esc(a.t||'امتحان')+'</b><small class="num">'+(a.d?fmtD(a.d)+' · ':'')+a.n+' طالب'+(a.cnt?' · المتوسط '+Math.round(a.sum/a.cnt)+'%':'')+(a.abs?' · '+a.abs+' غايب':'')+'</small></div>'+((me.role==='admin'||(me.perms||[]).indexOf('del')>=0)?'<button class="btn danger sm" data-act="askDelEx" data-ex="'+a.id+'">'+ic('trash',14)+' حذف</button>':'')+'</div>'});h+='</div>'}
+  if(exDel){var a0=agg[exDel.id]||{};h+='<div class="modal-bg"><div class="modal" role="dialog" aria-modal="true"><h3>'+ic('alert',20)+' تحذير</h3><p>إنت هتحذف درجات <b>'+esc(a0.t||'الامتحان')+'</b>'+(a0.d?' بتاريخ '+fmtD(a0.d):'')+' لـ <b class="num">'+(a0.n||0)+'</b> طالب. الحذف ده مش بيترجع.</p><div class="field"><label for="exPin">اكتب باسورد الحذف</label><input type="password" inputmode="numeric" id="exPin" autocomplete="off" dir="ltr"></div>'+(exDel.err?'<div class="msg err">'+esc(exDel.err)+'</div>':'')+'<div class="row"><button class="btn kill" data-act="doDelEx" '+(exDel.busy?'disabled':'')+'>حذف نهائي</button><button class="btn plain" data-act="cancelDelEx">إلغاء</button></div></div></div>'}
+  return h;
+}
+function examPreview(r){
+  if(!r.exams.length)return '<div class="msg err">ملقيتش في الملف درجات لطلاب موجودين. اتأكد إن فيه عمود لكود الطالب وعمود للدرجة.</div>'+skippedHtml(r);
+  var h='<div class="msg ok">لقيت <b class="num">'+r.total+'</b> درجة في <b class="num">'+r.exams.length+'</b> امتحان.</div>';
+  r.exams.forEach(function(e){var vals=e.recs.filter(function(x){return x.s!=null&&x.m}).map(function(x){return x.s/x.m*100});var avg=vals.length?Math.round(vals.reduce(function(a,b){return a+b},0)/vals.length):null;
+    h+='<div class="list"><div class="li" style="background:var(--surface2)"><div class="grow"><b>'+esc(e.title||'من غير اسم')+'</b><small class="num">'+fmtD(e.date)+' · '+e.recs.length+' طالب'+(e.max?' · من '+fmtNum(e.max):'')+(avg!=null?' · المتوسط '+avg+'%':'')+'</small></div></div>';
+    e.recs.slice(0,6).forEach(function(x){h+='<div class="li"><div class="grow"><b>'+esc(x.name)+'</b><small class="num">'+esc(x.code)+'</small></div>'+(x.s==null?'<span class="chip a">غائب</span>':'<b class="num" dir="ltr">'+fmtNum(x.s)+(x.m?' / '+fmtNum(x.m):'')+'</b>')+'</div>'});
+    if(e.recs.length>6)h+='<div class="li"><small class="hint">و'+(e.recs.length-6)+' طالب كمان…</small></div>';h+='</div>'});
+  if(r.exams.some(function(e){return !e.title}))h+='<div class="warn">اكتب اسم الامتحان في الخانة فوق عشان يظهر لأولياء الأمور.</div>';
+  if(r.exams.some(function(e){return !e.max}))h+='<div class="warn">مش عارف الدرجة النهائية. اكتبها في خانة "الدرجة النهائية" فوق عشان تظهر النسبة.</div>';
+  h+=skippedHtml(r);
+  h+='<div class="row"><button class="btn main" data-act="applyExam" '+(saving||r.exams.some(function(e){return !e.title})?'disabled':'')+'>اعتماد وحفظ الدرجات</button><button class="btn plain sm" data-act="cancelExam">إلغاء</button></div>';
+  return h;
+}
+function applyExam(){
+  var r=ex.res;if(!r||!r.exams.length)return;S.exams=S.exams||{};var n=0;
+  r.exams.forEach(function(e){if(!e.title)return;var id=examId(e.title,e.date);
+    e.recs.forEach(function(x){S.exams[x.code]=S.exams[x.code]||{};S.exams[x.code][id]={t:e.title,d:e.date,s:x.s,m:x.m||null};n++})});
+  S.uploads=S.uploads||[];S.uploads.unshift({file:'درجات: '+ex.file,at:today(),count:n,range:r.exams.map(function(e){return e.title}).join('، ')});S.uploads=S.uploads.slice(0,50);
+  ex={title:'',date:ex.date,max:'',status:'',msg:'',file:'',parsed:null,res:null};
+  markDirty();save();
+}
+function doDelEx(){
+  var pin=val('exPin');exDel.busy=true;exDel.err='';render();
+  sha('c3m-del:'+pin).then(function(hh){
+    if(hh!==(STATE.delPin||S.delPin)){exDel.busy=false;exDel.err='باسورد الحذف غلط';render();var el=document.getElementById('exPin');if(el)el.focus();return}
+    var id=exDel.id,n=0;Object.keys(S.exams||{}).forEach(function(c){if(S.exams[c][id]){delete S.exams[c][id];n++}if(!Object.keys(S.exams[c]).length)delete S.exams[c]});
+    exDel=null;markDirty();save();
+  }).catch(function(){exDel.busy=false;exDel.err='المتصفح ده مش بيدعم الحذف. جرب Chrome أو Safari حديث.';render()});
+}
+
 /* ---------- events ---------- */
 document.addEventListener('click',function(e){
   var t=e.target.closest('button,[data-go]');if(!t)return;
@@ -1054,7 +1244,7 @@ document.addEventListener('click',function(e){
   if(t.dataset.rmsch){S.site.schedule=(S.site.schedule||[]).filter(function(e){return e.id!==t.dataset.rmsch});markDirty();render();return}
   if(t.dataset.rmann){S.site.ann=(S.site.ann||[]).filter(function(e){return e.id!==t.dataset.rmann});markDirty();render();return}
   if(t.dataset.askdel){confirmDel=t.dataset.askdel;render();return}
-  if(t.dataset.del){var c=t.dataset.del;S.students=S.students.filter(function(s){return String(s.code)!==c});delete S.attendance[c];confirmDel='';markDirty();render();toast('اتحذف الطالب');return}
+  if(t.dataset.del){var c=t.dataset.del;S.students=S.students.filter(function(s){return String(s.code)!==c});delete S.attendance[c];if(S.exams)delete S.exams[c];confirmDel='';markDirty();render();toast('اتحذف الطالب');return}
   if(t.dataset.rm){S[t.dataset.rm].splice(+t.dataset.i,1);markDirty();render();return}
   var a=t.dataset.act;if(!a)return;
   if(a==='save')return save();
@@ -1105,6 +1295,11 @@ document.addEventListener('click',function(e){
   if(a==='applyUpload')return applyUpload();
   if(a==='cancelUpload'){up.status='';up.res=null;up.rows=null;up.batch=null;render();return}
   if(a==='applyBatch')return applyBatch();
+  if(a==='applyExam')return applyExam();
+  if(a==='cancelExam'){ex.parsed=null;ex.res=null;ex.status='';render();return}
+  if(a==='askDelEx'){exDel={id:t.dataset.ex,err:'',busy:false};render();var pe=document.getElementById('exPin');if(pe)pe.focus();return}
+  if(a==='cancelDelEx'){exDel=null;render();return}
+  if(a==='doDelEx')return doDelEx();
 });
 function val(id){var el=document.getElementById(id);return el?el.value:''}
 document.addEventListener('click',function(e){if(e.target.dataset&&e.target.dataset.closepick){pickNum='';render()}if(e.target.dataset&&e.target.dataset.closeimg){imgOpen='';render()}});
@@ -1114,8 +1309,8 @@ document.addEventListener('submit',function(e){if(e.target.id==='loginForm'){e.p
   if(me){render();return}
   trackLoading=true;render();var code=trackCode;
   db.collection('students').doc(code).get().then(function(snap){if(code!==trackCode)return;
-    STATE.students=[];STATE.attendance={};
-    if(snap.exists){var x=snap.data();STATE.students=[{code:code,name:x.name||'',grade:x.grade||'',group:x.group||''}];STATE.attendance[code]=x.att||{}}
+    STATE.students=[];STATE.attendance={};STATE.exams={};
+    if(snap.exists){var x=snap.data();STATE.students=[{code:code,name:x.name||'',grade:x.grade||'',group:x.group||''}];STATE.attendance[code]=x.att||{};STATE.exams[code]=x.ex||{}}
     trackLoading=false;S=clone(STATE);render()}).catch(function(err){trackLoading=false;render();toast(fbErr(err))});}});
 document.addEventListener('change',function(e){
   var t=e.target;
@@ -1124,7 +1319,7 @@ document.addEventListener('change',function(e){
   if(t.id==='grades'){S.grades=t.value.split('\n').map(function(x){return x.trim()}).filter(Boolean);markDirty();render();return}
   if(t.dataset.sf){var s=S.students[+t.dataset.i],f=t.dataset.sf,v=t.value.trim();
     if(f==='code'){if(!v||S.students.some(function(o){return o!==s&&String(o.code)===v})){toast('الكود ده مستخدم أو فاضي');t.value=s.code;return}
-      if(S.attendance[s.code]){S.attendance[v]=S.attendance[s.code];delete S.attendance[s.code]}}
+      if(S.attendance[s.code]){S.attendance[v]=S.attendance[s.code];delete S.attendance[s.code]}if(S.exams&&S.exams[s.code]){S.exams[v]=S.exams[s.code];delete S.exams[s.code]}}
     s[f]=v;markDirty();refreshBar();return}
   if(t.dataset.note){var c=t.dataset.note,cur=(S.attendance[c]||{})[attDate];if(cur){if(typeof cur==='string')cur={s:cur};cur.n=t.value.trim();S.attendance[c][attDate]=cur;markDirty();refreshBar()}return}
   if(t.dataset.site){S.site[t.dataset.site]=t.value;markDirty();refreshBar();return}
@@ -1147,6 +1342,10 @@ document.addEventListener('change',function(e){
   if(t.id==='contactsTa'){S.site.contacts=t.value.split('\n').map(function(x){return digits(x).replace(/\s+/g,' ').trim()}).filter(Boolean);markDirty();refreshBar();return}
   if(t.id==='onlyNoG'){onlyNoG=t.checked;render();return}
   if(t.id==='delGrade'){delGrade=t.value;render();return}
+  if(t.id==='exFile'&&t.files[0]){readExam(t.files[0]);t.value='';return}
+  if(t.id==='exName'){ex.title=t.value.trim();if(ex.parsed){resolveExam();render()}return}
+  if(t.id==='exDate'){ex.date=t.value||today();if(ex.parsed){resolveExam();render()}return}
+  if(t.id==='exMax'){ex.max=t.value.trim();if(ex.parsed){resolveExam();render()}return}
   if(t.id==='upFile'&&t.files.length){if(t.files.length>1)return readMany([].slice.call(t.files));return readFile(t.files[0])}
   if(t.id==='upDate'){up.date=t.value||today();if(up.rows){resolveUpload();render()}return}
   if(t.id==='upAddNew'){up.addNew=t.checked;if(up.rows){resolveUpload();render()}return}
@@ -1159,16 +1358,16 @@ document.addEventListener('input',function(e){if(e.target.id==='stuQ'){stuQuery=
 function refreshBar(){var bar=document.querySelector('.savebar');if(!bar)return;bar.querySelector('span').textContent='فيه تعديلات لسه متحفظتش';var b=bar.querySelector('[data-act=save]');b.disabled=false;if(!bar.querySelector('[data-act=discard]')){var d=document.createElement('button');d.className='btn ghost sm';d.dataset.act='discard';d.textContent='إلغاء التعديلات';b.parentNode.insertBefore(d,b)}}
 
 function loadLogo(file){var r=new FileReader();r.onload=function(){var img=new Image();img.onload=function(){var cv=document.createElement('canvas');var n=320;cv.width=n;cv.height=n;var x=cv.getContext('2d');var sc=Math.max(n/img.width,n/img.height);var w=img.width*sc,h=img.height*sc;x.drawImage(img,(n-w)/2,(n-h)/2,w,h);S.logo=cv.toDataURL('image/webp',0.88);if(S.logo.indexOf('image/webp')<0)S.logo=cv.toDataURL('image/png');markDirty();render();toast('اتغير اللوجو، دوس حفظ')};img.src=r.result};r.readAsDataURL(file)}
-function exportData(){try{var data={logo:S.logo,site:S.site,grades:S.grades,delPin:S.delPin,students:S.students,attendance:S.attendance,uploads:S.uploads};
+function exportData(){try{var data={logo:S.logo,site:S.site,grades:S.grades,delPin:S.delPin,students:S.students,attendance:S.attendance,exams:S.exams||{},uploads:S.uploads};
   var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='center3m-backup-'+today()+'.json';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000);toast('اتنزلت النسخة')}catch(x){toast('مقدرتش أنزّل النسخة')}}
 function importData(file){var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!d.students)throw 0;
-  S.students=d.students;S.attendance=d.attendance||{};if(d.site)S.site=d.site;if(d.logo)S.logo=d.logo;if(d.grades)S.grades=d.grades;if(d.delPin)S.delPin=d.delPin;
+  S.students=d.students;S.attendance=d.attendance||{};S.exams=d.exams||{};if(d.site)S.site=d.site;if(d.logo)S.logo=d.logo;if(d.grades)S.grades=d.grades;if(d.delPin)S.delPin=d.delPin;
   var n=0;S.uploads=(d.uploads||[]).map(function(u){u=clone(u);if(!u.id)u.id='imp'+Date.now()+'_'+(n++);return u});
   markDirty();render();toast('اتقرا الملف: '+S.students.length+' طالب. دوس حفظ عشان يتنقلوا')}catch(x){toast('الملف ده مش نسخة احتياطية صحيحة')}};r.readAsText(file)}
 
 /* ---------- save to Firestore ---------- */
 function studentDoc(st,code){var s=(st.students||[]).find(function(x){return String(x.code)===String(code)});if(!s)return null;
-  return {code:String(s.code),name:s.name||'',grade:s.grade||'',group:s.group||'',phone:s.phone||'',att:(st.attendance||{})[s.code]||{}}}
+  var o={code:String(s.code),name:s.name||'',grade:s.grade||'',group:s.group||'',phone:s.phone||'',att:(st.attendance||{})[s.code]||{}};var ex=(st.exams||{})[s.code];if(ex&&Object.keys(ex).length)o.ex=ex;return o}
 function siteDoc(st){return {logo:st.logo||'',site:st.site||{},grades:st.grades||[],delPin:st.delPin||''}}
 function userDoc(u){return {name:u.name||'',u:u.u,role:u.role||'staff',perms:u.perms||[],active:u.active!==false}}
 function save(){
