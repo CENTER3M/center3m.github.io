@@ -262,6 +262,10 @@ textarea{min-height:90px;resize:vertical}
 }
 
 
+.att-search{position:relative;display:flex;align-items:center}
+.att-search .ico{position:absolute;inset-inline-start:14px;color:var(--muted);pointer-events:none}
+.att-search input{padding-inline-start:44px;font-size:17px;min-height:48px}
+.li[hidden],.empty[hidden]{display:none!important}
 /* exams */
 .exams{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .exams-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;flex-wrap:wrap}
@@ -363,7 +367,7 @@ var STATE = JSON.parse(document.getElementById('state').textContent);
 var S = JSON.parse(JSON.stringify(STATE)); // working copy (settings edits)
 var view = 'home', adminTab = 'upload', dirty = false, canEdit = false, isOwner = false, artifactNs = null, saving = false;
 var up = {status:'', msg:'', file:'', rows:null, kind:'', res:null};
-var trackCode = '', trackMonth = '', attDate = today(), attGrade = '', stuQuery = '', confirmDel = '';
+var trackCode = '', trackMonth = '', attDate = today(), attGrade = '', attQuery = '', stuQuery = '', confirmDel = '';
 var STATUS = {p:'حاضر',a:'غائب',l:'متأخر',e:'غائب بعذر',k:'تم طرده من الحصة'};
 var SHORT = {p:'حاضر',a:'غائب',l:'متأخر',e:'بعذر',k:'مطرود'};
 var DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
@@ -560,15 +564,20 @@ function gradeOpts(sel,all){return (all?'<option value="">كل الصفوف</opt
 function pAtt(){
   var list=(S.students||[]).filter(function(s){return !attGrade||s.grade===attGrade});
   var h='<h3>تسجيل الحضور اليومي</h3><div class="row"><div class="field"><label for="attDate">التاريخ</label><input type="date" id="attDate" value="'+attDate+'"></div><div class="field"><label for="attGrade">الصف</label><select id="attGrade">'+gradeOpts(attGrade,true)+'</select></div></div>';
+  h+='<div class="field"><label for="attQ">بحث بالكود أو الاسم</label><div class="att-search">'+ic('search',18)+'<input type="search" id="attQ" autocomplete="off" placeholder="اكتب كود الطالب أو اسمه" value="'+esc(attQuery)+'"></div></div>';
   h+='<div class="row"><button class="btn plain sm" data-act="allP">الكل حاضر</button><button class="btn plain sm" data-act="clearDay">مسح تسجيل اليوم</button><span class="hint">'+dayName(attDate)+' '+fmtD(attDate)+' · '+list.length+' طالب</span></div>';
   if(!list.length)return h+'<div class="empty">مفيش طلاب في الصف ده. ضيف طلاب من تبويب "الطلاب".</div>';
   h+='<div class="list">';
   list.forEach(function(s){var v=(S.attendance[s.code]||{})[attDate],st=v?(typeof v==='string'?v:v.s):'',note=v&&typeof v!=='string'?(v.n||''):'';
-    h+='<div class="li"><div class="grow"><b>'+esc(s.name)+'</b> <span class="code">'+esc(s.code)+'</span><small>'+esc(s.grade||'')+(s.group?' · '+esc(s.group):'')+'</small></div><div class="seg">'+
+    h+='<div class="li" data-q="'+esc(attKey(s))+'"'+(attMatch(s)?'':' hidden')+'><div class="grow"><b>'+esc(s.name)+'</b> <span class="code">'+esc(s.code)+'</span><small>'+esc(s.grade||'')+(s.group?' · '+esc(s.group):'')+'</small></div><div class="seg">'+
     ['p','a','l','e','k'].map(function(k){return '<button class="'+k+(st===k?' on':'')+'" data-mark="'+esc(s.code)+'" data-st="'+k+'">'+STATUS[k]+'</button>'}).join('')+'</div>'+
     '<input type="text" style="flex:1 1 160px" id="note-'+esc(s.code)+'" data-note="'+esc(s.code)+'" placeholder="ملاحظة (اختياري)" value="'+esc(note)+'" '+(st?'':'disabled')+'></div>'});
-  return h+'</div>';
+  return h+'</div><div class="empty" id="attNone"'+(list.some(attMatch)?' hidden':'')+'>مفيش طالب بالكود أو الاسم ده.</div>';
 }
+function attKey(s){return String(s.code)+' '+normAr(s.name)}
+function attQ(){return normAr(attQuery)}
+function attMatch(s){var q=attQ();if(!q)return true;var k=attKey(s);if(/^\d+$/.test(q))return String(s.code).indexOf(q)===0;return k.indexOf(q)>=0}
+function attFilter(){var q=attQ(),n=0;Array.prototype.forEach.call(document.querySelectorAll('.li[data-q]'),function(el){var k=el.getAttribute('data-q'),code=k.split(' ')[0];var ok=!q||(/^\d+$/.test(q)?code.indexOf(q)===0:k.indexOf(q)>=0);el.hidden=!ok;if(ok)n++});var none=document.getElementById('attNone');if(none)none.hidden=n>0}
 function nextCode(){var m=1000;(S.students||[]).forEach(function(s){var n=parseInt(s.code,10);if(n>m)m=n});return String(m+1)}
 function pStu(){
   var h='<h3>إضافة طالب</h3><div class="row"><div class="field"><label for="nsName">اسم الطالب</label><input type="text" id="nsName"></div><div class="field"><label for="nsCode">الكود</label><input type="text" id="nsCode" class="num" value="'+nextCode()+'"></div><div class="field"><label for="nsGrade">الصف</label><select id="nsGrade">'+gradeOpts('')+'</select></div><div class="field"><label for="nsGroup">المجموعة</label><input type="text" id="nsGroup" placeholder="مثلاً: سبت وثلاثاء 4م"></div><div class="field"><label for="nsPhone">تليفون ولي الأمر</label><input type="tel" id="nsPhone" class="num"></div><button class="btn acc" data-act="addStu">إضافة</button></div>';
@@ -1366,7 +1375,7 @@ document.addEventListener('change',function(e){
   if(t.id==='logoFile'&&t.files[0])return loadLogo(t.files[0]);
   if(t.id==='importFile'&&t.files[0])return importData(t.files[0]);
 });
-document.addEventListener('input',function(e){if(e.target.id==='stuQ'){stuQuery=e.target.value;var pos=e.target.selectionStart;render();var el=document.getElementById('stuQ');if(el){el.focus();try{el.setSelectionRange(pos,pos)}catch(x){}}}});
+document.addEventListener('input',function(e){if(e.target.id==='attQ'){attQuery=e.target.value;attFilter();return}if(e.target.id==='stuQ'){stuQuery=e.target.value;var pos=e.target.selectionStart;render();var el=document.getElementById('stuQ');if(el){el.focus();try{el.setSelectionRange(pos,pos)}catch(x){}}}});
 function refreshBar(){var bar=document.querySelector('.savebar');if(!bar)return;bar.querySelector('span').textContent='فيه تعديلات لسه متحفظتش';var b=bar.querySelector('[data-act=save]');b.disabled=false;if(!bar.querySelector('[data-act=discard]')){var d=document.createElement('button');d.className='btn ghost sm';d.dataset.act='discard';d.textContent='إلغاء التعديلات';b.parentNode.insertBefore(d,b)}}
 
 function loadLogo(file){var r=new FileReader();r.onload=function(){var img=new Image();img.onload=function(){var cv=document.createElement('canvas');var n=320;cv.width=n;cv.height=n;var x=cv.getContext('2d');var sc=Math.max(n/img.width,n/img.height);var w=img.width*sc,h=img.height*sc;x.drawImage(img,(n-w)/2,(n-h)/2,w,h);S.logo=cv.toDataURL('image/webp',0.88);if(S.logo.indexOf('image/webp')<0)S.logo=cv.toDataURL('image/png');markDirty();render();toast('اتغير اللوجو، دوس حفظ')};img.src=r.result};r.readAsDataURL(file)}
