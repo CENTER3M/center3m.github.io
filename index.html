@@ -1775,15 +1775,16 @@ function pLight(){if(me.role!=='admin')return '';var s=S.site;
 
 /* ---------- weekly timetable per stage (built by hand) ---------- */
 var TT_DAYS=['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'],ttStage=null,confirmTT=false;
+function ttTime(r){if(!r.from)return '—';return r.to?'من '+fmt12(r.from)+' إلى '+fmt12(r.to):fmt12(r.from)}
 function fmt12(t){var m=String(t||'').match(/^(\d{1,2}):(\d{2})/);if(!m)return String(t||'');var h=+m[1],mm=m[2];return (h%12||12)+':'+mm+' '+(h>=12?'م':'ص')}
 function ttRows(d,stage){var tt=(d.site.tt||{})[stage]||[];return tt.filter(function(r){return r.subject||r.teacher||r.from}).slice().sort(function(a,b){return (TT_DAYS.indexOf(a.day)-TT_DAYS.indexOf(b.day))||String(a.from||'').localeCompare(String(b.from||''))})}
 function ttTable(rows){var h='<table class="tt"><thead><tr><th>اليوم</th><th>المادة</th><th>المدرس</th><th>الميعاد</th></tr></thead><tbody>';
   rows.forEach(function(r,i){var first=i===0||rows[i-1].day!==r.day,span=0;if(first){for(var j=i;j<rows.length&&rows[j].day===r.day;j++)span++}
-    h+='<tr'+(first&&i?' class="newday"':'')+'>'+(first?'<td class="tt-day" rowspan="'+span+'">'+esc(r.day)+'</td>':'')+'<td class="tt-sub">'+esc(r.subject||'—')+'</td><td>'+esc(r.teacher||'—')+'</td><td class="tt-time">'+esc(r.from?fmt12(r.from)+(r.to?' – '+fmt12(r.to):''):'—')+'</td></tr>'});
+    h+='<tr'+(first&&i?' class="newday"':'')+'>'+(first?'<td class="tt-day" rowspan="'+span+'">'+esc(r.day)+'</td>':'')+'<td class="tt-sub">'+esc(r.subject||'—')+'</td><td>'+esc(r.teacher||'—')+'</td><td class="tt-time">'+esc(ttTime(r))+'</td></tr>'});
   return h+'</tbody></table>'}
 function ttHtml(d,stu){var out='',stages=[];if(stu&&stu.grade)stages.push(stu.grade);stages.push('');
   stages.forEach(function(g){var rows=ttRows(d,g);if(!rows.length)return;
-    out+='<section class="tbl-card"><h3>'+ic('text',18)+' '+(g?'جدول حصص '+esc(g):esc(d.site.ttAllTitle||'جدول الحصص'))+'</h3><div class="ttable">'+ttTable(rows)+'</div></section>'});
+    out+='<section class="tbl-card"><h3>'+ic('text',18)+' '+(g?'جدول حصص '+esc(g):esc(d.site.ttAllTitle||'جدول الحصص'))+'</h3><div class="ttable">'+ttTable(rows)+'</div><div class="report-row" style="margin:0 0 14px"><button class="btn acc" data-act="ttImg" data-g="'+esc(g)+'">'+ic('image',17)+' حفظ الجدول</button></div></section>'});
   return out}
 function pTT(){var s=S.site;s.tt=s.tt||{};var gs=S.grades||[];if(ttStage===null)ttStage=gs[0]||'';
   var h='<h3>'+ic('text')+' جدول الحصص لكل مرحلة</h3><p class="hint">اختار المرحلة، وضيف الحصص: اليوم والمادة والمدرس والميعاد. الموقع بيرتبهم لوحده بالأيام ويعرضهم كجدول لولي أمر المرحلة دي بس. وبعد ما تخلص دوس "حفظ" تحت.</p>';
@@ -1841,6 +1842,47 @@ function pRatings(){
   h+='<div class="row" style="justify-content:space-between"><b>'+(ratFilter?'تقييمات '+ratFilter+' نجوم ('+F.length+')':'كل التقييمات')+'</b>'+(ratFilter?'<button class="btn plain sm" data-act="ratFilter" data-n="0">عرض الكل</button>':'')+'<button class="btn plain sm" data-act="reloadRatings">تحديث</button></div><div class="list">';
   F.forEach(function(r){var dd=tsDate(r.ts);h+='<div class="li rat-item"><div class="grow">'+starsRow(r.stars,false,16)+(r.text?'<p class="rat-text">'+esc(r.text)+'</p>':'<small class="hint">'+(r.stars<5?'من غير تعليق':'')+'</small>')+'<small class="num">'+(dd?dayName(dd)+' '+fmtD(dd):'')+(r.grade?' · '+esc(r.grade):'')+'</small></div>'+(me.role==='admin'?'<button class="btn plain sm" data-act="rmRating" data-id="'+esc(r.id)+'" aria-label="حذف">'+ic('trash',14)+'</button>':'')+'</div>'});
   return h+'</div>';
+}
+
+
+/* timetable saved as an image, same look as the student report */
+function saveCanvas(cv,name,okMsg){cv.toBlob(function(blob){imgBusy=false;if(!blob){toast('مقدرتش أعمل الصورة');return}
+  var file=null;try{file=new File([blob],name,{type:'image/png'})}catch(x){}
+  var ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(ios&&file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:name}).catch(function(){});return}
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},4000);toast(okMsg||'اتحفظت الصورة على جهازك')},'image/png')}
+function ttImg(stage){
+  if(imgBusy)return;var d=D(),rows=ttRows(d,stage);if(!rows.length)return;imgBusy=true;toast('جاري تجهيز الصورة…');
+  var ready=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve(),logo=new Image(),lp=new Promise(function(res){logo.onload=res;logo.onerror=res;logo.src=d.logo||''});
+  Promise.all([ready,lp]).then(function(){var cv=drawTT(d,rows,stage,logo);saveCanvas(cv,'CENTER3M-schedule'+(stage?'-'+(S.grades||[]).indexOf(stage):'')+'.png','اتحفظت صورة الجدول على جهازك')}).catch(function(){imgBusy=false;toast('مقدرتش أعمل الصورة')});
+}
+function drawTT(d,rows,stage,logo){
+  var W=1240,P=56,S2=2,F='"IBM Plex Sans Arabic","Readex Pro",Tahoma,sans-serif',B='#BBBBBB',HB='#EEF6F9',rowH=58;
+  var H=150+24+(stage?60:0)+30+rowH*(rows.length+1)+150;
+  var cv=document.createElement('canvas');cv.width=W*S2;cv.height=H*S2;var x=cv.getContext('2d');x.scale(S2,S2);x.direction='rtl';x.textBaseline='middle';
+  function T(t,X,Y,o){o=o||{};x.font=(o.w||400)+' '+(o.s||19)+'px '+F;x.fillStyle=o.c||'#000';x.textAlign=o.a||'right';t=String(t==null?'':t);var mw=o.mw;
+    if(mw&&x.measureText(t).width>mw){while(t.length>1&&x.measureText(t+'…').width>mw)t=t.slice(0,-1);t+='…'}x.fillText(t,X,Y)}
+  function RR(X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()}
+  function cell(X,Y,w,h,fill){if(fill){x.fillStyle=fill;x.fillRect(X,Y,w,h)}x.strokeStyle=B;x.lineWidth=1.2;x.strokeRect(X,Y,w,h)}
+  x.fillStyle='#FFFFFF';x.fillRect(0,0,W,H);var s=d.site,tw=W-2*P,y=40;
+  if(logo.naturalWidth){x.save();RR(W-P-96,y,96,96,18);x.clip();x.drawImage(logo,W-P-96,y,96,96);x.restore()}
+  T(s.arName||'سنتر 3M',W-P-116,y+36,{s:30,w:700});T(s.enName||'',W-P-116,y+74,{s:16,c:'#555'});
+  T('جدول الحصص الأسبوعي',P,y+36,{s:24,w:700,a:'left'});T(stage||(s.ttAllTitle||'كل المراحل'),P,y+72,{s:19,c:'#444',a:'left'});
+  y=150;x.fillStyle='#1EC8EF';x.fillRect(P,y,tw,4);y+=24;
+  if(stage){cell(W-P-150,y,150,46,HB);T('المرحلة',W-P-14,y+23,{s:18,w:700});cell(P,y,tw-150,46);T(stage,W-P-164,y+23,{s:20,w:600});y+=60}
+  y+=6;var cols=[190,tw-190-330-260,330,260],heads=['اليوم','المادة','المدرس','الميعاد'];
+  var X=W-P;cols.forEach(function(w,i){cell(X-w,y,w,rowH,HB);T(heads[i],X-w/2,y+rowH/2,{s:20,w:700,a:'center'});X-=w});y+=rowH;
+  var y0=y;
+  rows.forEach(function(r,i){var first=i===0||rows[i-1].day!==r.day,span=0;if(first){for(var j=i;j<rows.length&&rows[j].day===r.day;j++)span++}
+    var X=W-P;if(first){cell(X-cols[0],y,cols[0],rowH*span,'#F6FBFD');T(r.day,X-cols[0]/2,y+rowH*span/2,{s:21,w:700,c:'#0B7FA0',a:'center'})}X-=cols[0];
+    var vals=[r.subject||'—',r.teacher||'—',ttTime(r)];
+    vals.forEach(function(v,k){var w=cols[k+1];cell(X-w,y,w,rowH);T(v,X-w/2,y+rowH/2,{s:19,w:k===0?700:400,a:'center',mw:w-24});X-=w});
+    if(first&&i){x.fillStyle='#1EC8EF';x.fillRect(P,y-1,tw,2.5)}y+=rowH});
+  x.strokeStyle='#888';x.lineWidth=1.6;x.strokeRect(P,y0-rowH,tw,y-y0+rowH);
+  y+=56;var cs=(s.contacts||[]).filter(Boolean).map(function(c){return digits(String(c))}).join(' · ');
+  if(cs)T('للتواصل: '+cs,W/2,y,{s:17,c:'#444',a:'center',mw:tw});
+  T('center3m.github.io',W/2,y+40,{s:16,c:'#0B7FA0',a:'center'});
+  return cv;
 }
 
 /* ---------- events ---------- */
@@ -1914,6 +1956,7 @@ document.addEventListener('click',function(e){
   if(a==='cancelUpload'){up.status='';up.res=null;up.rows=null;up.batch=null;render();return}
   if(a==='applyBatch')return applyBatch();
   if(a==='applyExam')return applyExam();
+  if(a==='ttImg')return ttImg(t.dataset.g||'');
   if(a==='rateStar'){var ta=document.getElementById('rateTxt');if(ta)rate.text=ta.value;rate.stars=+t.dataset.n;refreshRate();return}
   if(a==='rateSend')return sendRate();
   if(a==='reloadRatings'){RATINGS=null;ratingsErr='';render();return}
