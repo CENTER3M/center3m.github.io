@@ -418,7 +418,7 @@ details.more[open]>summary{margin-bottom:10px}
 @keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
 @keyframes slideIn{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:none}}
-@keyframes grow{from{width:0}}
+@keyframes grow{from{width:0}}.lv,.lv2{position:relative;margin:16px auto 6px;max-width:460px;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border:1px solid rgba(255,255,255,.08);box-shadow:0 18px 40px -18px rgba(0,0,0,.6);overflow:hidden;animation:up .6s ease both}.lv:before,.lv2:before{content:'';position:absolute;inset:0 0 auto 0;height:2px;background:linear-gradient(90deg,#1EC8EF,#33E6C3)}.lv{padding:14px 16px 16px}.lv-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.lv-title{font-size:13px;opacity:.7}.lv-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#2EE59D;background:rgba(46,229,157,.1);border:1px solid rgba(46,229,157,.25);padding:3px 10px;border-radius:999px}.lv-chip i{width:7px;height:7px;border-radius:50%;background:#2EE59D;animation:livePulse 1.8s ease-out infinite}@keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(46,229,157,.6)}70%{box-shadow:0 0 0 7px rgba(46,229,157,0)}100%{box-shadow:0 0 0 0 rgba(46,229,157,0)}}.lv-grid{display:grid;grid-template-columns:repeat(3,1fr)}.lv-grid.c2{grid-template-columns:repeat(2,1fr)}.lv-grid.c1{grid-template-columns:1fr}.lv-cell{display:flex;flex-direction:column;align-items:center;gap:4px;padding:2px 6px}.lv-cell+.lv-cell{border-inline-start:1px solid rgba(255,255,255,.08)}.lv-cell b{font-family:'Readex Pro',sans-serif;font-size:28px;font-weight:700;line-height:1.1;background:linear-gradient(180deg,#FFFFFF,#9FE9F7);-webkit-background-clip:text;background-clip:text;color:transparent}.lv-cell:first-child b{background:linear-gradient(180deg,#5CF0D2,#1EC8EF);-webkit-background-clip:text;background-clip:text}.lv-cell small{font-size:12px;opacity:.65;text-align:center}.lv2{display:flex;align-items:center;gap:14px;padding:16px}.lv2-ic{flex:none;width:54px;height:54px;border-radius:16px;display:grid;place-items:center;color:#0B2233;background:linear-gradient(135deg,#1EC8EF,#33E6C3);box-shadow:0 8px 22px -6px rgba(30,200,239,.6)}.lv2-main{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.lv2-main b{font-family:'Readex Pro',sans-serif;font-size:32px;font-weight:700;line-height:1.05}.lv2-main>span{font-size:13px;opacity:.7}.lv2-side{display:flex;flex-direction:column;gap:8px;padding-inline-start:14px;border-inline-start:1px solid rgba(255,255,255,.08)}.lv2-side div{display:flex;flex-direction:column}.lv2-side b{font-family:'Readex Pro',sans-serif;font-size:17px;font-weight:600}.lv2-side small{font-size:11px;opacity:.6}html.still .lv-chip i{animation:none}.live-set{margin:10px 0 16px;padding:14px;border-radius:14px;border:1px solid rgba(51,230,195,.25);background:rgba(51,230,195,.05);display:flex;flex-direction:column;gap:6px}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 @keyframes ring{0%{box-shadow:0 0 0 0 rgba(51,230,195,.45),0 18px 44px rgba(0,0,0,.45)}100%{box-shadow:0 0 0 22px rgba(51,230,195,0),0 18px 44px rgba(0,0,0,.45)}}
 @keyframes shimmer{to{background-position:200% 0}}
@@ -649,6 +649,7 @@ function trackView(d){
     if(trackLoading)h+='<div class="msg info">جاري البحث…</div>';else if(!stu)h+='<div class="msg err">الكود ده مش موجود. اتأكد من الكود أو كلم السنتر.</div>';}
   else if((d.students||[]).some(function(s){return /\(مثال\)/.test(s.name)}))h+='<p class="hint">مثال: جرب الكود 1001</p>';
   h+='</div>';
+  h+=liveHtml(d);
   h+=noticeHtml(d,stu);
   h+=notesHtml(d,stu);
   if(stu){
@@ -1443,8 +1444,26 @@ function loadStats(){
     STATS=st;statsErr='';if(adminTab==='stats')render()}).catch(function(e){statsErr=e&&e.code==='permission-denied'?'rules':'err';if(adminTab==='stats')render()});
 }
 function dayKey(off){var d=new Date();d.setDate(d.getDate()-off);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+/* real visitor counter shown to parents (true numbers from stats, never invented) */
+var LIVE=null,liveAsked=false;
+function liveOn(d){return (d||D()).site.liveCount!==false}
+function liveMin(d){var n=parseInt((d||D()).site.liveMin,10);return n>=0?n:30}
+function loadLive(){if(liveAsked)return;liveAsked=true;
+  Promise.all([db.doc('stats/d_'+today()).get(),db.doc('stats/total').get()]).then(function(r){var a=r[0].exists?r[0].data():{},b=r[1].exists?r[1].data():{};
+    LIVE={t:a.v||0,all:b.v||0,tq:a.q||0,q:b.q||0};var el=document.getElementById('liveBox');if(el){var w=document.createElement('div');w.innerHTML=liveHtml(D());if(w.firstChild)el.replaceWith(w.firstChild);countUp()}}).catch(function(){LIVE={t:0,all:0}})}
+function liveHtml(d){if(me||!liveOn(d))return '';if(!LIVE){loadLive();return '<div id="liveBox"></div>'}
+  var min=liveMin(d),L=LIVE;if(L.all<min)return '<div id="liveBox"></div>';
+  var cells=[];if(L.t>=min)cells.push([L.t,'زيارة النهارده','sun']);cells.push([L.all,'إجمالي الزيارات','users']);if(L.q>=min)cells.push([L.q,'متابعة لطالب','search']);
+  var st=(d.site.liveStyle||'a');
+  if(st==='b'){return '<div id="liveBox" class="lv2"><div class="lv2-ic">'+ic('users',26)+'</div><div class="lv2-main"><div class="lv2-top"><span class="lv-chip"><i></i>مباشر</span></div><b class="num" data-count="'+cells[0][0]+'">'+cells[0][0]+'</b><span>'+cells[0][1]+' من أولياء الأمور</span></div><div class="lv2-side">'+cells.slice(1).map(function(c){return '<div><b class="num" data-count="'+c[0]+'">'+c[0]+'</b><small>'+c[1]+'</small></div>'}).join('')+'</div></div>'}
+  return '<div id="liveBox" class="lv"><div class="lv-head"><span class="lv-chip"><i></i>مباشر</span><span class="lv-title">أولياء الأمور بيتابعوا مع سنتر 3M</span></div><div class="lv-grid c'+cells.length+'">'+cells.map(function(c){return '<div class="lv-cell"><b class="num" data-count="'+c[0]+'">'+c[0]+'</b><small>'+c[1]+'</small></div>'}).join('')+'</div></div>'}
+function countUp(){if(document.documentElement.classList.contains('still'))return;document.querySelectorAll('#liveBox [data-count]').forEach(function(el){var n=+el.dataset.count,t0=null;
+  function f(ts){if(!t0)t0=ts;var p=Math.min(1,(ts-t0)/1100),e=1-Math.pow(1-p,3);el.textContent=Math.round(n*e);if(p<1)requestAnimationFrame(f)}requestAnimationFrame(f)})}
+function liveSet(){var on=liveOn(S),min=liveMin(S);
+  return '<div class="live-set"><b>'+ic('eye',16)+' عداد المتابعين لأولياء الأمور</b><p class="hint">بيظهر لولي الأمر تحت خانة الكود بالأرقام الحقيقية: زيارات النهارده والإجمالي من البداية.</p>'+
+  '<div class="row"><label class="chk"><input type="checkbox" id="liveCount"'+(on?' checked':'')+'> اعرض العداد</label><div class="field" style="flex:0 1 220px"><label for="liveMin">ميظهرش غير لما يعدّي</label><select id="liveMin">'+[0,20,30,50,100,150].map(function(n){return '<option value="'+n+'"'+(n===min?' selected':'')+'>'+(n?n+' زيارة':'يظهر دايمًا')+'</option>'}).join('')+'</select></div><div class="field" style="flex:0 1 180px"><label for="liveStyle">الشكل</label><select id="liveStyle"><option value="a"'+((S.site.liveStyle||'a')==='a'?' selected':'')+'>شريط أرقام</option><option value="b"'+(S.site.liveStyle==='b'?' selected':'')+'>كارت بأيقونة</option></select></div></div></div>'}
 function pStats(){
-  var h='<h3>'+ic('chart',18)+' عدد الزيارات</h3><p class="hint">الصفحة دي بتظهرلك إنت بس (الأدمن). الزيارة بتتحسب مرة واحدة لكل ولي أمر لما يفتح الموقع، والبحث بيتحسب لما يدوّر على كود طالب موجود. زياراتك إنت والموظفين مش بتتحسب.</p>';
+  var h='<h3>'+ic('chart',18)+' عدد الزيارات</h3><p class="hint">الصفحة دي بتظهرلك إنت بس (الأدمن). الزيارة بتتحسب مرة واحدة لكل ولي أمر لما يفتح الموقع، والبحث بيتحسب لما يدوّر على كود طالب موجود. زياراتك إنت والموظفين مش بتتحسب.</p>'+liveSet();
   if(statsErr==='rules')return h+'<div class="warn">لازم تحدّث قواعد Firebase (Rules) الأول عشان العداد يشتغل. الخطوات في الرسالة اللي بعتهالك.</div><button class="btn plain sm" data-act="reloadStats">جرب تاني</button>';
   if(statsErr)return h+'<div class="msg err">مقدرتش أجيب الأرقام. اتأكد من النت.</div><button class="btn plain sm" data-act="reloadStats">جرب تاني</button>';
   if(!STATS)return h+'<div class="msg info">جاري تحميل الأرقام…</div>';
@@ -1825,12 +1844,11 @@ function pTT(){var s=S.site;s.tt=s.tt||{};var gs=S.grades||[];if(ttStage===null)
 
 /* ---------- parents' rating of the system (stars + optional reason) ---------- */
 var rate={stars:0,sent:false,busy:false,text:''},RATINGS=null,ratingsErr='';
-try{var _r=localStorage.getItem('c3m_rated');if(_r&&Date.now()-(+_r)<30*864e5)rate.sent=true}catch(e){}
 var RATE_WORDS=['','ضعيف','مقبول','جيد','جيد جدًا','ممتاز'];
 function starsRow(n,act,size){var h='<div class="stars'+(act?' pick':'')+'" role="'+(act?'radiogroup':'img')+'" aria-label="'+n+' من 5">';for(var i=1;i<=5;i++)h+=act?'<button class="st'+(i<=n?' on':'')+'" data-act="rateStar" data-n="'+i+'" aria-label="'+i+' نجوم">'+ic('star',size||34)+'</button>':'<span class="st'+(i<=n?' on':'')+'">'+ic('star',size||16)+'</span>';return h+'</div>'}
 function rateHtml(stu){
   var h='<section class="rate" id="rateBox"><h3>ما رأيك في نظام المتابعة؟</h3>';
-  if(rate.sent)return h+'<p class="rate-thanks">'+ic('check',20)+' شكرًا لرأيك، بيساعدنا نطوّر الخدمة 🌟</p></section>';
+  if(rate.sent)return h+'<p class="rate-thanks">'+ic('check',20)+' شكرًا لرأيك، بيساعدنا نطوّر الخدمة 🌟</p><button class="btn plain sm" data-act="rateAgain">إضافة تقييم تاني</button></section>';
   h+='<p class="hint">رأيك بيفرق معانا، وبياخد ثانية واحدة.</p>'+starsRow(rate.stars,true)+(rate.stars?'<div class="rate-word">'+RATE_WORDS[rate.stars]+'</div>':'');
   if(rate.stars&&rate.stars<5)h+='<div class="field rate-why"><label for="rateTxt">إيه اللي نقدر نحسّنه؟ (اختياري)</label><textarea id="rateTxt" maxlength="500" placeholder="اكتب ملاحظتك هنا…">'+esc(rate.text)+'</textarea></div>';
   if(rate.stars)h+='<button class="btn main" data-act="rateSend" '+(rate.busy?'disabled':'')+'>'+(rate.busy?'جاري الإرسال…':'إرسال التقييم')+'</button>';
@@ -1840,7 +1858,7 @@ function refreshRate(){var el=document.getElementById('rateBox');if(!el)return;v
 function sendRate(){
   var tx=val('rateTxt').trim().slice(0,500),stu=curStu();rate.text=tx;rate.busy=true;refreshRate();
   var doc={stars:rate.stars,text:rate.stars<5?tx:'',grade:(stu&&stu.grade)||'',code:String((stu&&stu.code)||'').slice(0,20),name:String((stu&&stu.name)||'').slice(0,80),group:String((stu&&stu.group)||'').slice(0,40),ts:firebase.firestore.FieldValue.serverTimestamp()};
-  db.collection('ratings').add(doc).then(function(){pingAdmin(doc);rate.busy=false;rate.sent=true;try{localStorage.setItem('c3m_rated',String(Date.now()))}catch(e){}refreshRate()})
+  db.collection('ratings').add(doc).then(function(){pingAdmin(doc);rate.busy=false;rate.sent=true;refreshRate()})
   .catch(function(){rate.busy=false;refreshRate();toast('مقدرناش نبعت التقييم دلوقتي، جرب تاني بعد شوية')});
 }
 /* phone notification to the admin through the free ntfy app (no names sent, details stay in the admin panel) */
@@ -2033,6 +2051,7 @@ document.addEventListener('click',function(e){
   if(a==='ttImg')return ttImg(t.dataset.g||'');
   if(a==='rateStar'){var ta=document.getElementById('rateTxt');if(ta)rate.text=ta.value;rate.stars=+t.dataset.n;refreshRate();return}
   if(a==='rateSend')return sendRate();
+  if(a==='rateAgain'){rate={stars:0,sent:false,busy:false,text:''};refreshRate();return}
   if(a==='ntfyOn'){var r='';var A='abcdefghijkmnpqrstuvwxyz23456789';var arr=new Uint32Array(12);crypto.getRandomValues(arr);for(var i=0;i<12;i++)r+=A[arr[i]%A.length];S.site.ntfy='center3m-'+r;markDirty();render();toast('دوس حفظ عشان التفعيل يتسجل');return}
   if(a==='ntfyOff'){delete S.site.ntfy;markDirty();render();toast('دوس حفظ عشان الإيقاف يتسجل');return}
   if(a==='ntfyCopy'){var tp=S.site.ntfy||'';try{navigator.clipboard.writeText(tp).then(function(){toast('اتنسخ')},function(){toast(tp)})}catch(x){toast(tp)}return}
@@ -2100,6 +2119,9 @@ document.addEventListener('change',function(e){
   if(t.dataset.uperm){var pp=t.dataset.uperm.split('|'),pu=S.users.find(function(x){return x.id===pp[0]});if(pu){pu.perms=pu.perms||[];var ix=pu.perms.indexOf(pp[1]);if(t.checked&&ix<0)pu.perms.push(pp[1]);if(!t.checked&&ix>=0)pu.perms.splice(ix,1);markDirty();refreshBar()}return}
   if(t.dataset.uactive){var au=S.users.find(function(x){return x.id===t.dataset.uactive});if(au){if(!t.checked&&au.role==='admin'&&adminCount()<=1){t.checked=true;toast('لازم يفضل أدمن واحد على الأقل');return}au.active=t.checked;markDirty();render()}return}
   if(t.dataset.urole){var ru=S.users.find(function(x){return x.id===t.dataset.urole});if(ru){if(t.value!=='admin'&&ru.role==='admin'&&adminCount()<=1){t.value='admin';toast('لازم يفضل أدمن واحد على الأقل');return}ru.role=t.value;if(ru.role==='admin')ru.perms=PERMS.map(function(p){return p[0]});markDirty();render()}return}
+  if(t.id==='liveCount'){S.site.liveCount=t.checked;markDirty();render();return}
+  if(t.id==='liveStyle'){S.site.liveStyle=t.value;markDirty();render();return}
+  if(t.id==='liveMin'){S.site.liveMin=+t.value;markDirty();render();return}
   if(t.id==='absLimit'){S.site.absLimit=+t.value;markDirty();render();return}
   if(t.id==='absParent'){S.site.absParent=t.checked;markDirty();refreshBar();return}
   if(t.id==='alGrade'){alGrade=t.value;render();return}
