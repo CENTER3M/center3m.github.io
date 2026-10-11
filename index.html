@@ -2132,6 +2132,15 @@ function importData(file){var r=new FileReader();r.onload=function(){try{var d=J
   markDirty();render();toast('اتقرا الملف: '+S.students.length+' طالب. دوس حفظ عشان يتنقلوا')}catch(x){toast('الملف ده مش نسخة احتياطية صحيحة')}};r.readAsText(file)}
 
 /* ---------- save to Firestore ---------- */
+/* Only the fields that really changed are written (each day / exam on its own),
+   so two people saving at the same time never wipe each other's work. */
+function fieldDiff(a,b){var out=[],FP=firebase.firestore.FieldPath,DEL=firebase.firestore.FieldValue.delete();
+  ['code','name','grade','group','phone'].forEach(function(k){if((a[k]||'')!==(b[k]||''))out.push(k,a[k]||'')});
+  ['att','ex'].forEach(function(m){var A=a[m]||{},B=b[m]||{};
+    Object.keys(A).forEach(function(k){if(stable(A[k])!==stable(B[k]))out.push(new FP(m,k),A[k])});
+    Object.keys(B).forEach(function(k){if(!(k in A))out.push(new FP(m,k),DEL)})});
+  return out}
+
 function studentDoc(st,code){var s=(st.students||[]).find(function(x){return String(x.code)===String(code)});if(!s)return null;
   var o={code:String(s.code),name:s.name||'',grade:s.grade||'',group:s.group||'',phone:s.phone||'',att:(st.attendance||{})[s.code]||{}};var ex=(st.exams||{})[s.code];if(ex&&Object.keys(ex).length)o.ex=ex;return o}
 function siteDoc(st){return {logo:st.logo||'',site:st.site||{},grades:st.grades||[],delPin:st.delPin||'',mediaIdx:(st.media||[]).map(function(m){return {id:m.id,stage:m.stage||'',caption:m.caption||'',order:m.order||0}})}}
@@ -2146,7 +2155,8 @@ function save(){
   var codes={};(S.students||[]).concat(STATE.students||[]).forEach(function(s){codes[String(s.code)]=1});
   Object.keys(codes).forEach(function(c){var a=studentDoc(S,c),b0=studentDoc(STATE,c);
     if(!a&&b0)ops.push(function(b){b.delete(db.doc('students/'+c))});
-    else if(a&&stable(a)!==stable(b0))ops.push(function(b){b.set(db.doc('students/'+c),a)})});
+    else if(a&&!b0)ops.push(function(b){b.set(db.doc('students/'+c),a)});
+    else if(a&&stable(a)!==stable(b0)){var args=fieldDiff(a,b0);if(args.length)ops.push(function(b){b.update.apply(b,[db.doc('students/'+c)].concat(args))})}});
   if(me.role==='admin'){
     (S.users||[]).forEach(function(u){var o=(STATE.users||[]).find(function(x){return x.id===u.id});if(o&&stable(userDoc(o))!==stable(userDoc(u)))ops.push(function(b){b.set(db.doc('users/'+u.id),userDoc(u))})});
     (STATE.users||[]).forEach(function(o){if(!(S.users||[]).some(function(x){return x.id===o.id}))ops.push(function(b){b.delete(db.doc('users/'+o.id))})});
