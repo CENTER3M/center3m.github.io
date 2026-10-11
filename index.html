@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0D1925">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="سنتر 3M">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>:root{box-sizing:border-box}body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>CENTER 3M</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Readex+Pro:wght@500;600;700&display=swap">
@@ -379,6 +387,14 @@ details.more[open]>summary{margin-bottom:10px}
 .rat-bar.on{background:rgba(245,185,64,.12)}
 .rb{height:8px;border-radius:99px;background:var(--bg);overflow:hidden}.rb i{display:block;height:100%;background:#F5B940}
 .rat-item .stars{margin-bottom:4px}.rat-text{white-space:pre-line;margin:4px 0;line-height:1.7}
+/* install bar */
+#instBar{position:fixed;inset-inline:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:70;max-width:460px;margin-inline:auto;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:10px 12px;box-shadow:0 14px 34px rgba(0,0,0,.45);transform:translateY(140%);transition:transform .4s cubic-bezier(.2,.9,.3,1.2)}
+#instBar.on{transform:none}
+#instBar img{width:42px;height:42px;border-radius:10px;flex:none}
+#instBar .ib-t{flex:1;display:flex;flex-direction:column;min-width:0;line-height:1.5}
+#instBar .ib-t b{font-size:15px}#instBar .ib-t small{color:var(--muted);font-size:12.5px}
+#instBar .ib-share{display:inline-grid;place-items:center;vertical-align:middle;color:var(--accent)}
+#instBar .ib-x{background:none;border:0;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;line-height:1}
 /* exams */
 .exams{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .exams-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;flex-wrap:wrap}
@@ -532,7 +548,7 @@ function applyTheme(){try{document.documentElement.classList.toggle('still',!!(D
   if(c.a)r.setProperty('--cyan',c.a); if(c.b)r.setProperty('--mint',c.b);
 }
 
-function render(){
+function render(){if(me)hideInstallBar();
   applyTheme();
   var d=D();
   var nav=me?'<button data-go="home" class="'+(view==='home'?'on':'')+'">'+ic('search',16)+' متابعة الغياب</button><button data-go="admin" class="'+(view==='admin'?'on':'')+'">'+ic('settings',16)+' الإعدادات</button>':'';
@@ -1005,13 +1021,14 @@ function toDate(v){
 }
 function fixName(n){return String(n||'').replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g,'').replace(/\s+([\u064B\u064C])/g,'$1').replace(/دمحم/g,'محمد').replace(/هللا/g,'الله').replace(/باهلل/g,'بالله').replace(/\u064C/g,'ي').replace(/\u064B(?=\s|$)/g,'ي').replace(/\s+/g,' ').trim()}
 function detectGrade(text){var s=normAr(text),n=0,stg='';
-  var m=s.match(/(^|[^\d])([123])\s*(ث|ع|ثانوي|اعدادي|الثانوي|الاعدادي)(?![\u0600-\u06FF])/);
-  if(m){n=+m[2];stg=/ث/.test(m[3])?'ثانوي':'اعدادي'}
-  else{var w=s.match(/(الاولي|الاول|اولي|اول|الثانيه|الثاني|ثانيه|تانيه|تاني|الثالثه|الثالث|ثالثه|تالته|تالت)\s+(الصف\s+)?(ثانوي|الثانوي|اعدادي|الاعدادي|ث|ع)(?![\u0600-\u06FF])/);
-    if(w){n=/اول/.test(w[1])?1:/(ثان|تان)/.test(w[1])?2:3;stg=/ث/.test(w[3])?'ثانوي':'اعدادي'}}
+  var m=s.match(/(^|[^\d])([1-6])\s*(ث|ع|ب|ثانوي|اعدادي|ابتدائي|الثانوي|الاعدادي|الابتدائي)(?![؀-ۿ])/);
+  if(m){n=+m[2];stg=/ث/.test(m[3])?'ثانوي':/ب/.test(m[3])?'ابتدائي':'اعدادي'}
+  else{var w=s.match(/(الاولي|الاول|اولي|اول|الثانيه|الثاني|ثانيه|تانيه|تاني|الثالثه|الثالث|ثالثه|تالته|تالت|الرابعه|الرابع|رابعه|رابع|الخامسه|الخامس|خامسه|خامس|السادسه|السادس|سادسه|سادس)\s+(الصف\s+)?(ثانوي|الثانوي|اعدادي|الاعدادي|ابتدائي|الابتدائي|ث|ع|ب)(?![؀-ۿ])/);
+    if(w){n=/اول/.test(w[1])?1:/(ثان|تان)/.test(w[1])?2:/(ثالث|تالت)/.test(w[1])?3:/رابع/.test(w[1])?4:/خامس/.test(w[1])?5:6;stg=/ث/.test(w[3])?'ثانوي':/ب/.test(w[3])?'ابتدائي':'اعدادي'}}
   if(!n)return '';
-  var ord=['الاول','الثاني','الثالث'][n-1];
-  return (S.grades||[]).find(function(g){var x=normAr(g);return x.indexOf(ord)>=0&&x.indexOf(stg)>=0})||''}
+  if(stg!=='ابتدائي'&&n>3)return '';
+  var ord=['الاول','الثاني','الثالث','الرابع','الخامس','السادس'][n-1],digit=String(n);
+  return (S.grades||[]).find(function(g){var x=normAr(g);return (x.indexOf(ord)>=0||new RegExp('(^|\\D)'+digit+'(\\D|$)').test(x))&&x.indexOf(stg)>=0})||''}
 function cleanCode(v){if(v==null)return '';if(typeof v==='number')return String(Math.round(v));var s=digits(String(v)).replace(/\s+/g,'').trim();if(/^\d+\.0+$/.test(s))s=s.replace(/\.0+$/,'');return s}
 function isCodeTok(s){return /^\d{2,8}$/.test(s)}
 
@@ -1884,6 +1901,28 @@ function drawTT(d,rows,stage,logo){
   T('center3m.github.io',W/2,y+40,{s:16,c:'#0B7FA0',a:'center'});
   return cv;
 }
+
+
+/* ---------- install as an app (PWA) ---------- */
+var deferredInstall=null;
+function isStandalone(){try{return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}}
+function isIOS(){return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)}
+function installDismissed(){try{var t=+localStorage.getItem('c3m_inst_x')||0;return Date.now()-t<14*864e5}catch(e){return false}}
+function showInstallBar(){
+  if(me||isStandalone()||installDismissed()||document.getElementById('instBar'))return;
+  var ios=isIOS();if(!ios&&!deferredInstall)return;
+  var b=document.createElement('div');b.id='instBar';
+  b.innerHTML='<img src="icon-192.png" alt=""><div class="ib-t"><b>ثبّت تطبيق سنتر 3M</b><small>'+(ios?'دوس على زرار المشاركة <span class="ib-share">'+ic('upload',14)+'</span> وبعدين «إضافة إلى الشاشة الرئيسية»':'افتح المتابعة بدوسة من شاشة موبايلك')+'</small></div>'+(ios?'':'<button class="btn acc sm" data-inst="go">تثبيت</button>')+'<button class="ib-x" data-inst="x" aria-label="إغلاق">×</button>';
+  document.body.appendChild(b);requestAnimationFrame(function(){b.classList.add('on')});
+}
+function hideInstallBar(){var b=document.getElementById('instBar');if(b)b.remove()}
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredInstall=e;setTimeout(showInstallBar,3500)});
+window.addEventListener('appinstalled',function(){hideInstallBar();deferredInstall=null});
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('[data-inst]');if(!t)return;
+  if(t.dataset.inst==='x'){try{localStorage.setItem('c3m_inst_x',String(Date.now()))}catch(x){}hideInstallBar();return}
+  if(t.dataset.inst==='go'&&deferredInstall){deferredInstall.prompt();deferredInstall.userChoice.then(function(){deferredInstall=null;hideInstallBar()})}});
+if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+if(isIOS())setTimeout(showInstallBar,5000);
 
 /* ---------- events ---------- */
 document.addEventListener('click',function(e){
