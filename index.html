@@ -395,6 +395,7 @@ details.more[open]>summary{margin-bottom:10px}
 #instBar .ib-t b{font-size:15px}#instBar .ib-t small{color:var(--muted);font-size:12.5px}
 #instBar .ib-share{display:inline-grid;place-items:center;vertical-align:middle;color:var(--accent)}
 #instBar .ib-x{background:none;border:0;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;line-height:1}
+.who-when{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:12.5px;margin-top:2px;flex-wrap:wrap}.who-when b{color:var(--fg);font-weight:600}.who-when .ico{color:var(--accent)}
 /* exams */
 .exams{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .exams-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;flex-wrap:wrap}
@@ -537,10 +538,10 @@ function randHex(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return hex
 function hashPw(pw,salt,iter){var enc=new TextEncoder();return crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveBits']).then(function(k){return crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(salt),iterations:iter,hash:'SHA-256'},k,256)}).then(hex)}
 function makeCred(pw){var salt=randHex(16),iter=150000;return hashPw(pw,salt,iter).then(function(h){return {salt:salt,iter:iter,hash:h}})}
 function uid(){return 'u'+randHex(6)}
-var ICO={star:'<path d="M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.2L12 17.1 6.4 20l1.1-6.2L2.9 9.4l6.3-.9z"/>',print:'<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',whats:'<path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.3z"/><path d="M9 10c.5 2 2 3.5 4 4l1.2-1.2 2 1-.7 1.7c-3 .3-7-3.7-6.7-6.7l1.7-.7 1 2z"/>',pin:'<path d="M12 17v5"/><path d="M9 3h6l-1 6 4 4v2H6v-2l4-4z"/>',chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',award:'<circle cx="12" cy="9" r="6"/><path d="M8.2 13.8 7 22l5-3 5 3-1.2-8.2"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',check:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',student:'<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',text:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',palette:'<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 0 0 0 20c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7h2a5.6 5.6 0 0 0 5.5-5.5C22 6 17.5 2 12 2z"/>',save:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',alert:'<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',plus:'<path d="M12 5v14"/><path d="M5 12h14"/>'};
+var ICO={clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',star:'<path d="M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.2L12 17.1 6.4 20l1.1-6.2L2.9 9.4l6.3-.9z"/>',print:'<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',whats:'<path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.3z"/><path d="M9 10c.5 2 2 3.5 4 4l1.2-1.2 2 1-.7 1.7c-3 .3-7-3.7-6.7-6.7l1.7-.7 1 2z"/>',pin:'<path d="M12 17v5"/><path d="M9 3h6l-1 6 4 4v2H6v-2l4-4z"/>',chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',award:'<circle cx="12" cy="9" r="6"/><path d="M8.2 13.8 7 22l5-3 5 3-1.2-8.2"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',check:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',student:'<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',text:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',palette:'<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 0 0 0 20c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7h2a5.6 5.6 0 0 0 5.5-5.5C22 6 17.5 2 12 2z"/>',save:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',alert:'<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',plus:'<path d="M12 5v14"/><path d="M5 12h14"/>'};
 function ic(n,s){return '<svg class="ico" viewBox="0 0 24 24" width="'+(s||18)+'" height="'+(s||18)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICO[n]||'')+'</svg>'}
-var TAB_IC={ratings:'star',alerts:'alert',notes:'pin',stats:'chart',exams:'award',upload:'upload',att:'check',media:'image',notice:'megaphone',links:'link',stu:'student',del:'trash',site:'text',look:'palette',backup:'save',users:'users'};
-function allowedTabs(){var all=PERMS.slice(0,2).concat([['alerts','تنبيهات الغياب'],['exams','درجات الامتحانات'],['media','الجداول'],['notice','إعلان الصفحة'],['notes','الملاحظات'],['links','الروابط']],PERMS.slice(2),[['users','الموظفين والصلاحيات'],['stats','عدد الزيارات'],['ratings','آراء أولياء الأمور']]);if(!me)return [];if(me.role==='admin')return all;return all.filter(function(t){if(t[0]==='alerts')return ['att','upload','stu'].some(function(x){return (me.perms||[]).indexOf(x)>=0});var need=(t[0]==='media'||t[0]==='notice'||t[0]==='notes'||t[0]==='links')?'site':t[0]==='exams'?'upload':t[0];return (me.perms||[]).indexOf(need)>=0})}
+var TAB_IC={log:'clock',ratings:'star',alerts:'alert',notes:'pin',stats:'chart',exams:'award',upload:'upload',att:'check',media:'image',notice:'megaphone',links:'link',stu:'student',del:'trash',site:'text',look:'palette',backup:'save',users:'users'};
+function allowedTabs(){var all=PERMS.slice(0,2).concat([['alerts','تنبيهات الغياب'],['exams','درجات الامتحانات'],['media','الجداول'],['notice','إعلان الصفحة'],['notes','الملاحظات'],['links','الروابط']],PERMS.slice(2),[['users','الموظفين والصلاحيات'],['log','سجل النشاط'],['stats','عدد الزيارات'],['ratings','آراء أولياء الأمور']]);if(!me)return [];if(me.role==='admin')return all;return all.filter(function(t){if(t[0]==='alerts')return ['att','upload','stu'].some(function(x){return (me.perms||[]).indexOf(x)>=0});var need=(t[0]==='media'||t[0]==='notice'||t[0]==='notes'||t[0]==='links')?'site':t[0]==='exams'?'upload':t[0];return (me.perms||[]).indexOf(need)>=0})}
 var dataVer=0;function markDirty(){dirty=true;dataVer++}
 
 function applyTheme(){try{document.documentElement.classList.toggle('still',!!(D().site||{}).noMotion)}catch(e){}
@@ -695,7 +696,7 @@ function adminView(){
   var h='<div class="wrap page"><div class="who"><div><div class="eyebrow">'+(isAdmin?'لوحة تحكم الأدمن':'لوحة الموظف')+'</div><h2 style="font-size:clamp(24px,3.4vw,32px)">الإعدادات</h2></div><div class="row" style="align-items:center"><span>'+esc(me.name||me.u)+'</span><span class="badge">'+(isAdmin?'أدمن':'موظف')+'</span><button class="btn plain sm" data-act="logout">'+ic('logout',15)+' خروج</button></div></div><p class="lead">الحضور بيتحفظ يوم بيوم ويتجمع على بعضه، وأي شيت جديد بيتضاف على اللي قبله. لما تدوس "حفظ" بيظهر لأولياء الأمور على طول.</p>';
   h+=dashHtml();
   h+='<div class="tabs" role="tablist">'+tabs.map(function(t){return '<button data-tab="'+t[0]+'" class="'+(adminTab===t[0]?'on':'')+'">'+ic(TAB_IC[t[0]]||'settings',16)+'<span>'+t[1]+'</span></button>'}).join('')+'</div>';
-  h+='<div class="panel">'+({ratings:pRatings,alerts:pAlerts,notes:pNotes,stats:pStats,exams:pExams,upload:pUpload,att:pAtt,media:pMedia,notice:pNotice,links:pLinks,stu:pStu,site:pSite,news:pNews,team:pTeam,look:pLook,backup:pBackup,users:pUsers,del:pDel}[adminTab])()+'</div>';
+  h+='<div class="panel">'+({log:pLog,ratings:pRatings,alerts:pAlerts,notes:pNotes,stats:pStats,exams:pExams,upload:pUpload,att:pAtt,media:pMedia,notice:pNotice,links:pLinks,stu:pStu,site:pSite,news:pNews,team:pTeam,look:pLook,backup:pBackup,users:pUsers,del:pDel}[adminTab])()+'</div>';
   if(delReq)h+=delModal();
   h+='<div class="savebar"><span>'+(dirty?'فيه تعديلات لسه متحفظتش':'كل التعديلات محفوظة')+'</span><div class="row">'+(dirty?'<button class="btn ghost sm" data-act="discard">إلغاء التعديلات</button>':'')+'<button class="btn main" data-act="save" '+(dirty&&!saving?'':'disabled')+'>'+(saving?'جاري الحفظ…':'حفظ')+'</button></div></div>';
   return h+'</div>';
@@ -857,7 +858,7 @@ function loadAll(){
     st.students=[];st.attendance={};st.exams={};
     r[1].forEach(function(doc){var x=doc.data();st.students.push({code:String(x.code||doc.id),name:x.name||'',grade:x.grade||'',group:x.group||'',phone:x.phone||''});if(x.att&&Object.keys(x.att).length)st.attendance[String(x.code||doc.id)]=x.att;if(x.ex&&Object.keys(x.ex).length)st.exams[String(x.code||doc.id)]=x.ex});
     st.students.sort(function(a,b){return (parseInt(a.code,10)||0)-(parseInt(b.code,10)||0)});
-    st.uploads=[];r[2].forEach(function(doc){var x=doc.data();delete x.ts;x.id=doc.id;st.uploads.push(x)});
+    st.uploads=[];r[2].forEach(function(doc){var x=doc.data();if(!x.atMs&&x.ts&&x.ts.toMillis)x.atMs=x.ts.toMillis();delete x.ts;x.id=doc.id;st.uploads.push(x)});
     if(r[3]){st.users=[];r[3].forEach(function(doc){var x=doc.data();x.id=doc.id;st.users.push(x)})}else st.users=[clone(me)];
     STATE=st;S=clone(STATE);dirty=false;dataVer++;
   });
@@ -967,7 +968,7 @@ function pUpload(){
   if(up.status==='preview'&&up.res)h+=previewHtml(up.res);
   var log=(S.uploads||[]).slice(0,8);
   if(log.length){h+='<h3>آخر الملفات اللي اترفعت</h3><div class="list">';
-    log.forEach(function(u){h+='<div class="li"><div class="grow"><b'+(u.deleted?' style="color:var(--bad)"':'')+'>'+esc(u.file)+'</b><small class="num">'+esc(u.at?fmtD(u.at):'')+' · '+u.count+' تسجيل'+(u.range?' · '+esc(u.range):'')+'</small></div>'+(!u.deleted&&canRestore()&&(u.recs||(u.dates&&u.dates.length))?'<button class="btn danger sm" data-act="askDelUp" data-uid="'+esc(u.id)+'">'+ic('trash',14)+' حذف اليوم</button>':'')+'</div>'});h+='</div>'}
+    log.forEach(function(u){h+='<div class="li"><div class="grow"><b'+(u.deleted?' style="color:var(--bad)"':'')+'>'+esc(u.file)+'</b><small class="num">'+u.count+' تسجيل'+(u.range?' · '+esc(u.range):'')+'</small>'+whoWhen(u)+'</div>'+(!u.deleted&&canRestore()&&(u.recs||(u.dates&&u.dates.length))?'<button class="btn danger sm" data-act="askDelUp" data-uid="'+esc(u.id)+'">'+ic('trash',14)+' حذف اليوم</button>':'')+'</div>'});h+='</div>'}
   return h;
 }
 function previewHtml(r){
@@ -1489,7 +1490,7 @@ function trashHtml(){
   var L=(S.uploads||[]).filter(function(u){return u.trash});
   var h='<h3>'+ic('trash',18)+' المحذوفات (تقدر ترجعها)</h3>';
   if(!L.length)h+='<p class="hint">مفيش حاجة محذوفة. أي حذف هتعمله من هنا ورايح هيظهر هنا وتقدر ترجعه بدوسة.</p>';
-  else{h+='<div class="list">';L.forEach(function(u){h+='<div class="li"><div class="grow"><b style="color:var(--bad)">'+esc(u.file)+'</b><small class="num">'+esc(u.at?fmtD(u.at):'')+' · '+u.count+'</small></div>'+(canRestore()?(restoreAsk===u.id?'<button class="btn acc sm" data-act="doRestore" data-rid="'+esc(u.id)+'">تأكيد الاسترجاع</button><button class="btn plain sm" data-act="cancelRestore">لا</button>':'<button class="btn plain sm" data-act="askRestore" data-rid="'+esc(u.id)+'">'+ic('upload',14)+' استرجاع</button>'):'')+'</div>'});h+='</div>'}
+  else{h+='<div class="list">';L.forEach(function(u){h+='<div class="li"><div class="grow"><b style="color:var(--bad)">'+esc(u.file)+'</b><small class="num">'+u.count+'</small>'+whoWhen(u)+'</div>'+(canRestore()?(restoreAsk===u.id?'<button class="btn acc sm" data-act="doRestore" data-rid="'+esc(u.id)+'">تأكيد الاسترجاع</button><button class="btn plain sm" data-act="cancelRestore">لا</button>':'<button class="btn plain sm" data-act="askRestore" data-rid="'+esc(u.id)+'">'+ic('upload',14)+' استرجاع</button>'):'')+'</div>'});h+='</div>'}
   h+='<details style="margin-top:6px"><summary style="cursor:pointer;font-weight:600">رجّع طلاب اتمسحوا قبل كده من نسخة احتياطية</summary><p class="hint" style="margin-top:8px">اختار ملف النسخة الاحتياطية (.json). الموقع هيضيف بس الطلاب اللي مش موجودين دلوقتي، ومعاهم حضورهم ودرجاتهم، ومش هيغيّر أي حاجة في الطلاب الموجودين.</p><input type="file" id="mergeFile" accept=".json,application/json"></details>';
   return h;
 }
@@ -1924,6 +1925,27 @@ document.addEventListener('click',function(e){var t=e.target.closest&&e.target.c
 if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
 if(isIOS())setTimeout(showInstallBar,5000);
 
+
+/* ---------- who did what, and when ---------- */
+function fmtClock(ms){var d=new Date(ms),h=d.getHours(),m=d.getMinutes();return (h%12||12)+':'+pad(m)+' '+(h>=12?'م':'ص')}
+function msDay(ms){var d=new Date(ms);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function byLabel(u){if(u.byName)return u.byName;if(!u.by)return '';var x=(S.users||[]).find(function(z){return z.u===u.by});return x?(x.name||x.u):u.by}
+function whoWhen(u){var who=byLabel(u),when=u.atMs?dayName(msDay(u.atMs))+' '+fmtD(msDay(u.atMs))+' · الساعة '+fmtClock(u.atMs):(u.at?fmtD(u.at):'');
+  if(!who&&!when)return '';return '<small class="who-when">'+ic('users',13)+' '+(who?'بواسطة <b>'+esc(who)+'</b>':'')+(who&&when?' · ':'')+esc(when)+'</small>'}
+var logWho='';
+function logKind(u){var f=String(u.file||'');if(u.deleted||/^حذف/.test(f))return ['حذف','a'];if(/^استرجاع/.test(f))return ['استرجاع','e'];if(/^درجات/.test(f))return ['درجات','l'];return ['رفع حضور','p']}
+function pLog(){
+  var L=(S.uploads||[]).slice().sort(function(a,b){return (b.atMs||0)-(a.atMs||0)});
+  var people={};L.forEach(function(u){var w=byLabel(u);if(w)people[w]=1});
+  var h='<h3>'+ic('clock',18)+' سجل النشاط</h3><p class="hint">كل عمليات الرفع والحذف والاسترجاع ورفع الدرجات: مين عملها، وإمتى بالظبط. السجل بيحتفظ بآخر 50 عملية.</p>';
+  h+='<div class="row"><div class="field" style="flex:0 1 260px"><label for="logWho">الموظف</label><select id="logWho"><option value="">الكل</option>'+Object.keys(people).map(function(w){return '<option'+(w===logWho?' selected':'')+'>'+esc(w)+'</option>'}).join('')+'</select></div></div>';
+  var F=L.filter(function(u){return !logWho||byLabel(u)===logWho});
+  if(!F.length)return h+'<div class="empty">مفيش نشاط متسجل.</div>';
+  h+='<div class="list">';
+  F.forEach(function(u){var k=logKind(u);h+='<div class="li"><span class="chip '+k[1]+'">'+k[0]+'</span><div class="grow"><b>'+esc(u.file)+'</b><small class="num">'+(u.count!=null?u.count+' تسجيل':'')+(u.range?' · '+esc(u.range):'')+'</small>'+whoWhen(u)+'</div></div>'});
+  return h+'</div><p class="hint">العمليات القديمة اللي اتعملت قبل التحديث ده ممكن يظهر فيها التاريخ بس من غير الساعة.</p>';
+}
+
 /* ---------- events ---------- */
 document.addEventListener('click',function(e){
   var t=e.target.closest('button,[data-go]');if(!t)return;
@@ -2064,6 +2086,7 @@ document.addEventListener('change',function(e){
   if(t.id==='absLimit'){S.site.absLimit=+t.value;markDirty();render();return}
   if(t.id==='absParent'){S.site.absParent=t.checked;markDirty();refreshBar();return}
   if(t.id==='alGrade'){alGrade=t.value;render();return}
+  if(t.id==='logWho'){logWho=t.value;render();return}
   if(t.id==='noticeTa'){S.site.notice=t.value;markDirty();refreshBar();return}
   if(t.id==='noticeStage'){S.site.noticeStage=t.value;markDirty();refreshBar();return}
   if(t.dataset.nt){var pr=t.dataset.nt.split('|'),nx=(S.site.notes||[])[+pr[0]];if(nx){nx[pr[1]]=pr[1]==='text'?t.value.trim():t.value;markDirty();refreshBar()}return}
@@ -2129,7 +2152,7 @@ function save(){
     (STATE.users||[]).forEach(function(o){if(!(S.users||[]).some(function(x){return x.id===o.id}))ops.push(function(b){b.delete(db.doc('users/'+o.id))})});
   }
   var oldIds={};(STATE.uploads||[]).forEach(function(u){oldIds[u.id]=1});
-  (S.uploads||[]).forEach(function(u){if(!u.id)u.id='n'+Date.now()+Math.random().toString(36).slice(2,7);if(!oldIds[u.id]){var d=clone(u);delete d.id;d.by=me.u;d.ts=firebase.firestore.FieldValue.serverTimestamp();ops.push(function(b){b.set(db.collection('uploads').doc(u.id),d)})}});
+  (S.uploads||[]).forEach(function(u){if(!u.id)u.id='n'+Date.now()+Math.random().toString(36).slice(2,7);if(!oldIds[u.id]){if(!u.by){u.by=me.u;u.byName=me.name||me.u}if(!u.atMs)u.atMs=Date.now();var d=clone(u);delete d.id;d.ts=firebase.firestore.FieldValue.serverTimestamp();ops.push(function(b){b.set(db.collection('uploads').doc(u.id),d)})}});
   var newIds={};(S.uploads||[]).forEach(function(u){newIds[u.id]=1});
   (STATE.uploads||[]).forEach(function(u){if(!newIds[u.id])ops.push(function(b){b.delete(db.collection('uploads').doc(u.id))})});
   if(!ops.length){saving=false;dirty=false;render();toast('مفيش تغييرات');return}
