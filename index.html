@@ -386,7 +386,7 @@ details.more[open]>summary{margin-bottom:10px}
 .rat-bar{display:grid;grid-template-columns:44px 1fr 34px;gap:8px;align-items:center;background:none;border:0;color:var(--fg);cursor:pointer;padding:2px 4px;border-radius:8px;font-size:14px}
 .rat-bar.on{background:rgba(245,185,64,.12)}
 .rb{height:8px;border-radius:99px;background:var(--bg);overflow:hidden}.rb i{display:block;height:100%;background:#F5B940}
-.rat-item .stars{margin:6px 0 4px}.rat-who{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.rat-code{font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(51,230,195,.12);color:#33E6C3}.rat-when{display:flex;align-items:center;gap:4px;opacity:.85}.rat-text{white-space:pre-line;margin:4px 0;line-height:1.7}
+.ntfy-box{margin:10px 0 14px;padding:14px;border-radius:14px;background:rgba(51,230,195,.06);border:1px solid rgba(51,230,195,.25);display:flex;flex-direction:column;gap:8px}.ntfy-steps{margin:0;padding-inline-start:20px;line-height:1.9}.ntfy-topic{background:rgba(255,255,255,.07);padding:4px 10px;border-radius:8px;font-size:14px;user-select:all}.rat-item .stars{margin:6px 0 4px}.rat-who{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.rat-code{font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(51,230,195,.12);color:#33E6C3}.rat-when{display:flex;align-items:center;gap:4px;opacity:.85}.rat-text{white-space:pre-line;margin:4px 0;line-height:1.7}
 /* install bar */
 #instBar{position:fixed;inset-inline:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:70;max-width:460px;margin-inline:auto;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:10px 12px;box-shadow:0 14px 34px rgba(0,0,0,.45);transform:translateY(140%);transition:transform .4s cubic-bezier(.2,.9,.3,1.2)}
 #instBar.on{transform:none}
@@ -1840,9 +1840,19 @@ function refreshRate(){var el=document.getElementById('rateBox');if(!el)return;v
 function sendRate(){
   var tx=val('rateTxt').trim().slice(0,500),stu=curStu();rate.text=tx;rate.busy=true;refreshRate();
   var doc={stars:rate.stars,text:rate.stars<5?tx:'',grade:(stu&&stu.grade)||'',code:String((stu&&stu.code)||'').slice(0,20),name:String((stu&&stu.name)||'').slice(0,80),group:String((stu&&stu.group)||'').slice(0,40),ts:firebase.firestore.FieldValue.serverTimestamp()};
-  db.collection('ratings').add(doc).then(function(){rate.busy=false;rate.sent=true;try{localStorage.setItem('c3m_rated',String(Date.now()))}catch(e){}refreshRate()})
+  db.collection('ratings').add(doc).then(function(){pingAdmin(doc);rate.busy=false;rate.sent=true;try{localStorage.setItem('c3m_rated',String(Date.now()))}catch(e){}refreshRate()})
   .catch(function(){rate.busy=false;refreshRate();toast('مقدرناش نبعت التقييم دلوقتي، جرب تاني بعد شوية')});
 }
+/* phone notification to the admin through the free ntfy app (no names sent, details stay in the admin panel) */
+function ntfySend(topic,title,msg,prio){if(!topic)return Promise.reject();
+  return fetch('https://ntfy.sh/',{method:'POST',body:JSON.stringify({topic:topic,title:title,message:msg,tags:['star'],priority:prio||4,click:'https://center3m.github.io/'})})}
+function pingAdmin(doc){try{var t=(D().site||{}).ntfy;if(!t)return;var st='';for(var i=1;i<=5;i++)st+=i<=doc.stars?'★':'☆';
+  ntfySend(t,'⭐ تقييم جديد على سنتر 3M',st+'  ('+doc.stars+' من 5)'+(doc.grade?'\n'+doc.grade:'')+(doc.text?'\n💬 فيه تعليق':'')+'\nافتح «آراء أولياء الأمور» عشان تشوف التفاصيل').catch(function(){})}catch(e){}}
+function ntfyHtml(){var t=S.site.ntfy||'';
+  var h='<div class="card ntfy-box"><b>'+ic('alert',16)+' إشعار على موبايلك مع كل تقييم</b>';
+  if(!t)return h+'<p class="hint">أول ما أي ولي أمر يقيّم، يوصلك إشعار على تليفونك فورًا (مجانًا).</p><button class="btn main sm" data-act="ntfyOn">تفعيل الإشعارات</button></div>';
+  h+='<ol class="ntfy-steps"><li>نزّل تطبيق <b>ntfy</b> من Google Play أو App Store (مجاني).</li><li>افتحه ودوس <b>+</b> واكتب اسم القناة ده بالظبط:<div class="row" style="margin-top:6px"><code class="ntfy-topic" dir="ltr">'+esc(t)+'</code><button class="btn plain sm" data-act="ntfyCopy">نسخ</button></div></li><li>دوس <b>حفظ</b> تحت عشان التفعيل يتسجل، وبعدها جرّب.</li></ol>';
+  return h+'<div class="row"><button class="btn main sm" data-act="ntfyTest">جرّب إشعار دلوقتي</button><button class="btn plain sm" data-act="ntfyOff">إيقاف الإشعارات</button></div><p class="hint">الإشعار فيه النجوم والمرحلة بس، واسم الطالب والتعليق بيظهروا هنا جوه الموقع. متشاركش اسم القناة مع حد.</p></div>'}
 function loadRatings(){return db.collection('ratings').orderBy('ts','desc').limit(500).get().then(function(qs){var L=[];qs.forEach(function(d){var x=d.data();x.id=d.id;L.push(x)});RATINGS=L;ratingsErr='';if(adminTab==='ratings')render()}).catch(function(e){ratingsErr=e&&e.code==='permission-denied'?'rules':'err';if(adminTab==='ratings')render()})}
 var ratFilter=0;
 function tsDate(t){try{var d=t&&t.toDate?t.toDate():(typeof t==='number'?new Date(t):null);if(!d)return '';return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}catch(e){return ''}}
@@ -1850,6 +1860,7 @@ function pRatings(){
   var h='<h3>'+ic('star',18)+' آراء أولياء الأمور</h3><p class="hint">التقييمات اللي أولياء الأمور بعتوها من آخر الصفحة. بتظهرلك إنت بس.</p>';
   if(ratingsErr==='rules')return h+'<div class="warn">لازم تحدّث قواعد Firebase (Rules) الأول عشان التقييمات تشتغل. الخطوات في الرسالة.</div><button class="btn plain sm" data-act="reloadRatings">جرب تاني</button>';
   if(ratingsErr)return h+'<div class="msg err">مقدرتش أجيب التقييمات. اتأكد من النت.</div><button class="btn plain sm" data-act="reloadRatings">جرب تاني</button>';
+  if(me.role==='admin')h+=ntfyHtml();
   if(!RATINGS){loadRatings();return h+'<div class="msg info">جاري التحميل…</div>'}
   var L=RATINGS,n=L.length;if(!n)return h+'<div class="empty">لسه مفيش تقييمات.</div>';
   var sum=0,c=[0,0,0,0,0,0];L.forEach(function(r){sum+=r.stars;c[r.stars]=(c[r.stars]||0)+1});var avg=sum/n;
@@ -2022,6 +2033,10 @@ document.addEventListener('click',function(e){
   if(a==='ttImg')return ttImg(t.dataset.g||'');
   if(a==='rateStar'){var ta=document.getElementById('rateTxt');if(ta)rate.text=ta.value;rate.stars=+t.dataset.n;refreshRate();return}
   if(a==='rateSend')return sendRate();
+  if(a==='ntfyOn'){var r='';var A='abcdefghijkmnpqrstuvwxyz23456789';var arr=new Uint32Array(12);crypto.getRandomValues(arr);for(var i=0;i<12;i++)r+=A[arr[i]%A.length];S.site.ntfy='center3m-'+r;markDirty();render();toast('دوس حفظ عشان التفعيل يتسجل');return}
+  if(a==='ntfyOff'){delete S.site.ntfy;markDirty();render();toast('دوس حفظ عشان الإيقاف يتسجل');return}
+  if(a==='ntfyCopy'){var tp=S.site.ntfy||'';try{navigator.clipboard.writeText(tp).then(function(){toast('اتنسخ')},function(){toast(tp)})}catch(x){toast(tp)}return}
+  if(a==='ntfyTest'){ntfySend(S.site.ntfy,'✅ تجربة إشعار سنتر 3M','الإشعارات شغالة. هيوصلك إشعار زي ده مع كل تقييم جديد.',3).then(function(r){toast(r.ok?'اتبعت، شوف موبايلك':'مقدرتش أبعت، جرب تاني')}).catch(function(){toast('مقدرتش أبعت، اتأكد من النت')});return}
   if(a==='reloadRatings'){RATINGS=null;ratingsErr='';render();return}
   if(a==='ratFilter'){ratFilter=+t.dataset.n;render();return}
   if(a==='rmRating'){var rid=t.dataset.id;db.collection('ratings').doc(rid).delete().then(function(){RATINGS=(RATINGS||[]).filter(function(r){return r.id!==rid});render();toast('اتحذف التقييم')}).catch(function(){toast('مقدرتش أحذفه')});return}
