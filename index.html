@@ -1518,6 +1518,25 @@ function countUp(){if(document.documentElement.classList.contains('still'))retur
 function liveSet(){var on=liveOn(S),min=liveMin(S);
   return '<div class="live-set"><b>'+ic('eye',16)+' عداد المتابعين لأولياء الأمور</b><p class="hint">بيظهر لولي الأمر تحت خانة الكود بالأرقام الحقيقية: زيارات النهارده والإجمالي من البداية.</p>'+
   '<div class="row"><label class="chk"><input type="checkbox" id="liveCount"'+(on?' checked':'')+'> اعرض العداد</label><div class="field" style="flex:0 1 220px"><label for="liveMin">ميظهرش غير لما يعدّي</label><select id="liveMin">'+[0,20,30,50,100,150].map(function(n){return '<option value="'+n+'"'+(n===min?' selected':'')+'>'+(n?n+' زيارة':'يظهر دايمًا')+'</option>'}).join('')+'</select></div><div class="field" style="flex:0 1 180px"><label for="liveStyle">الشكل</label><select id="liveStyle"><option value="a"'+((S.site.liveStyle||'a')==='a'?' selected':'')+'>شريط أرقام</option><option value="b"'+(S.site.liveStyle==='b'?' selected':'')+'>كارت بأيقونة</option></select></div></div></div>'}
+/* who saved their child's code on their phone (one record per student) */
+function logKidSave(su){try{if(localStorage.getItem('c3m_staff'))return}catch(x){}
+  try{db.collection('saves').doc(String(su.code)).set({code:String(su.code).slice(0,20),name:String(su.name||'').slice(0,80),grade:String(su.grade||'').slice(0,60),ts:firebase.firestore.FieldValue.serverTimestamp()}).catch(function(){})}catch(e){}}
+var SAVES=null,savesErr='',savesOpen=false,savesQ='';
+function loadSaves(){db.collection('saves').orderBy('ts','desc').limit(1000).get().then(function(qs){var L=[];qs.forEach(function(d){L.push(d.data())});SAVES=L;savesErr='';if(adminTab==='stats')render()}).catch(function(e){savesErr=e&&e.code==='permission-denied'?'rules':'err';if(adminTab==='stats')render()})}
+function savesHtml(){var h='<div class="opt-box"><div class="row" style="justify-content:space-between"><b>📌 حفظوا كود ابنهم على الموبايل</b>'+(SAVES?'<button class="btn plain sm" data-act="reloadSaves">تحديث</button>':'')+'</div>';
+  if(savesErr==='rules')return h+'<div class="warn">لازم تحدّث قواعد Firebase الأول عشان القايمة دي تشتغل.</div></div>';
+  if(savesErr)return h+'<div class="msg err">مقدرتش أجيب القايمة. اتأكد من النت.</div></div>';
+  if(!SAVES){loadSaves();return h+'<div class="msg info">جاري التحميل…</div></div>'}
+  var td=today(),nT=SAVES.filter(function(x){var ms=x.ts&&x.ts.toMillis?x.ts.toMillis():(typeof x.ts==='number'?x.ts:0);return ms&&msDay(ms)===td}).length;
+  var tot=(S.students||[]).length;
+  h+='<div class="tiles num" style="margin:0"><div class="tile"><small>إجمالي اللي حفظوا</small><b>'+SAVES.length+'</b></div><div class="tile"><small>النهارده</small><b>'+nT+'</b></div>'+(tot?'<div class="tile"><small>من إجمالي الطلبة</small><b>'+Math.round(SAVES.length/tot*100)+'%</b></div>':'')+'</div>';
+  if(!SAVES.length)return h+'<p class="hint">لسه محدش حفظ كود ابنه.</p></div>';
+  h+='<button class="btn plain sm" data-act="toggleSaves" style="align-self:flex-start">'+(savesOpen?'إخفاء الأسماء':'عرض الأسماء ('+SAVES.length+')')+'</button>';
+  if(savesOpen){var q=normAr(savesQ||''),L=SAVES.filter(function(x){return !q||normAr(x.name||'').indexOf(q)>=0||String(x.code).indexOf(savesQ)>=0});
+    h+='<div class="field"><input type="text" id="savesQ" placeholder="دوّر بالاسم أو الكود" value="'+esc(savesQ)+'"></div><div class="list">';
+    L.slice(0,300).forEach(function(x){var ms=x.ts&&x.ts.toMillis?x.ts.toMillis():(typeof x.ts==='number'?x.ts:0);h+='<div class="li"><div class="grow"><b>'+esc(x.name||'طالب')+'</b><small class="num">كود '+esc(x.code)+(x.grade?' · '+esc(x.grade):'')+'</small></div><small class="num">'+(ms?dayName(msDay(ms))+' '+fmtD(msDay(ms))+' · '+fmtClock(ms):'')+'</small></div>'});
+    h+='</div>'}
+  return h+'</div>'}
 function pStats(){
   var h='<h3>'+ic('chart',18)+' عدد الزيارات</h3><p class="hint">الصفحة دي بتظهرلك إنت بس (الأدمن). الزيارة بتتحسب مرة واحدة لكل ولي أمر لما يفتح الموقع، والبحث بيتحسب لما يدوّر على كود طالب موجود. زياراتك إنت والموظفين مش بتتحسب.</p>'+liveSet();
   if(statsErr==='rules')return h+'<div class="warn">لازم تحدّث قواعد Firebase (Rules) الأول عشان العداد يشتغل. الخطوات في الرسالة اللي بعتهالك.</div><button class="btn plain sm" data-act="reloadStats">جرب تاني</button>';
@@ -1527,6 +1546,7 @@ function pStats(){
   var td=STATS.days[dayKey(0)]||{v:0,q:0},yd=STATS.days[dayKey(1)]||{v:0,q:0};
   h+='<div class="tiles num" style="margin-top:0"><div class="tile"><small>النهارده</small><b>'+td.v+'</b></div><div class="tile"><small>امبارح</small><b>'+yd.v+'</b></div><div class="tile"><small>آخر 7 أيام</small><b>'+sum(7,'v')+'</b></div><div class="tile"><small>آخر 30 يوم</small><b>'+sum(30,'v')+'</b></div><div class="tile"><small>الإجمالي من البداية</small><b>'+STATS.total.v+'</b></div><div class="tile p"><small>بحث عن طلاب (الإجمالي)</small><b>'+STATS.total.q+'</b></div></div>';
   var rows=[],mx=1;for(var i=13;i>=0;i--){var k=dayKey(i),d=STATS.days[k]||{v:0,q:0};rows.push([k,d]);if(d.v>mx)mx=d.v}
+  h+=savesHtml();
   h+='<h3>آخر 14 يوم</h3><div class="vchart">';
   rows.forEach(function(r){var pc=Math.round(r[1].v/mx*100);h+='<div class="vbar" title="'+fmtD(r[0])+': '+r[1].v+' زيارة، '+r[1].q+' بحث"><span class="num">'+r[1].v+'</span><i style="height:'+Math.max(pc,r[1].v?4:1)+'%"></i><small>'+(+r[0].slice(8))+'</small></div>'});
   h+='</div><div class="list">';
@@ -2145,8 +2165,10 @@ document.addEventListener('click',function(e){
   if(a==='editTable'){var i0=t.dataset.i;if(tblEdit===i0){var ed=document.querySelector('[data-tbledit="'+i0+'"]');if(ed){S.site.tables[+i0].html=cleanHtml(ed.innerHTML);markDirty()}tblEdit=''}else tblEdit=i0;render();return}
   if(a==='printReport')return printReport(t.dataset.code);
   if(a==='imgReport')return imgReport(t.dataset.code);
-  if(a==='kidSave'){var su=curStu();if(su){var L=kidsGet().filter(function(k){return String(k.code)!==String(su.code)});L.push({code:String(su.code),name:su.name});kidsSet(L);render();toast('اتحفظ ✓ هتلاقيه فوق المرة الجاية')}return}
+  if(a==='kidSave'){var su=curStu();if(su){var L=kidsGet().filter(function(k){return String(k.code)!==String(su.code)});L.push({code:String(su.code),name:su.name});kidsSet(L);render();toast('اتحفظ ✓ هتلاقيه فوق المرة الجاية');logKidSave(su)}return}
   if(a==='kidNo'){var su2=curStu();if(su2)kidSkip[su2.code]=1;render();return}
+  if(a==='toggleSaves'){savesOpen=!savesOpen;render();return}
+  if(a==='reloadSaves'){SAVES=null;savesErr='';render();return}
   if(a==='addCd'){var tt=val('cdT').trim(),dd=val('cdD');if(!tt||!dd){toast('اكتب اسم الامتحان والتاريخ');return}S.site.exUp=S.site.exUp||[];S.site.exUp.push({id:sid(),title:tt,date:dd,time:val('cdTm'),stage:val('cdS')});markDirty();render();toast('اتضاف، دوس حفظ');return}
   if(a==='rmCd'){var cid=t.dataset.id;S.site.exUp=(S.site.exUp||[]).filter(function(e){return e.id!==cid});markDirty();render();return}
   if(a==='addNote'){var nt=val('ntNew').trim();if(!nt){toast('اكتب الملاحظة الأول');return}S.site.notes=S.site.notes||[];S.site.notes.unshift({id:sid(),text:nt,stage:val('ntStage')});markDirty();render();toast('اتضافت الملاحظة، دوس حفظ');return}
@@ -2199,6 +2221,7 @@ document.addEventListener('change',function(e){
   if(t.dataset.uactive){var au=S.users.find(function(x){return x.id===t.dataset.uactive});if(au){if(!t.checked&&au.role==='admin'&&adminCount()<=1){t.checked=true;toast('لازم يفضل أدمن واحد على الأقل');return}au.active=t.checked;markDirty();render()}return}
   if(t.dataset.urole){var ru=S.users.find(function(x){return x.id===t.dataset.urole});if(ru){if(t.value!=='admin'&&ru.role==='admin'&&adminCount()<=1){t.value='admin';toast('لازم يفضل أدمن واحد على الأقل');return}ru.role=t.value;if(ru.role==='admin')ru.perms=PERMS.map(function(p){return p[0]});markDirty();render()}return}
   if(t.id==='liveCount'){S.site.liveCount=t.checked;markDirty();render();return}
+  if(t.id==='savesQ'){savesQ=t.value.trim();render();var el=document.getElementById('savesQ');if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length)}return}
   if(t.id==='kidsOn'){S.site.kidsOff=!t.checked;markDirty();render();return}
   if(t.id==='bnavOn'){S.site.bnavOff=!t.checked;markDirty();render();return}
   if(t.id==='doodleOn'){S.site.doodleOff=!t.checked;markDirty();render();return}
