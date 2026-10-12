@@ -386,7 +386,7 @@ details.more[open]>summary{margin-bottom:10px}
 .rat-bar{display:grid;grid-template-columns:44px 1fr 34px;gap:8px;align-items:center;background:none;border:0;color:var(--fg);cursor:pointer;padding:2px 4px;border-radius:8px;font-size:14px}
 .rat-bar.on{background:rgba(245,185,64,.12)}
 .rb{height:8px;border-radius:99px;background:var(--bg);overflow:hidden}.rb i{display:block;height:100%;background:#F5B940}
-.ntfy-box{margin:10px 0 14px;padding:14px;border-radius:14px;background:rgba(51,230,195,.06);border:1px solid rgba(51,230,195,.25);display:flex;flex-direction:column;gap:8px}.ntfy-steps{margin:0;padding-inline-start:20px;line-height:1.9}.ntfy-topic{background:rgba(255,255,255,.07);padding:4px 10px;border-radius:8px;font-size:14px;user-select:all}.rat-item .stars{margin:6px 0 4px}.rat-who{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.rat-code{font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(51,230,195,.12);color:#33E6C3}.rat-when{display:flex;align-items:center;gap:4px;opacity:.85}.rat-text{white-space:pre-line;margin:4px 0;line-height:1.7}
+.ntfy-box{margin:10px 0 14px;padding:14px;border-radius:14px;background:rgba(51,230,195,.06);border:1px solid rgba(51,230,195,.25);display:flex;flex-direction:column;gap:8px}.ntfy-opts{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07)}.ntfy-steps{margin:0;padding-inline-start:20px;line-height:1.9}.ntfy-topic{background:rgba(255,255,255,.07);padding:4px 10px;border-radius:8px;font-size:14px;user-select:all}.rat-item .stars{margin:6px 0 4px}.rat-who{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.rat-code{font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(51,230,195,.12);color:#33E6C3}.rat-when{display:flex;align-items:center;gap:4px;opacity:.85}.rat-text{white-space:pre-line;margin:4px 0;line-height:1.7}
 /* install bar */
 #instBar{position:fixed;inset-inline:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:70;max-width:460px;margin-inline:auto;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:10px 12px;box-shadow:0 14px 34px rgba(0,0,0,.45);transform:translateY(140%);transition:transform .4s cubic-bezier(.2,.9,.3,1.2)}
 #instBar.on{transform:none}
@@ -1862,15 +1862,29 @@ function sendRate(){
   .catch(function(){rate.busy=false;refreshRate();toast('مقدرناش نبعت التقييم دلوقتي، جرب تاني بعد شوية')});
 }
 /* phone notification to the admin through the free ntfy app (no names sent, details stay in the admin panel) */
-function ntfySend(topic,title,msg,prio){if(!topic)return Promise.reject();
-  return fetch('https://ntfy.sh/',{method:'POST',body:JSON.stringify({topic:topic,title:title,message:msg,tags:['star'],priority:prio||4,click:'https://center3m.github.io/'})})}
-function pingAdmin(doc){try{var t=(D().site||{}).ntfy;if(!t)return;var st='';for(var i=1;i<=5;i++)st+=i<=doc.stars?'★':'☆';
+function ntfySend(topic,title,msg,prio,tag){if(!topic)return Promise.reject();
+  return fetch('https://ntfy.sh/',{method:'POST',body:JSON.stringify({topic:topic,title:title,message:msg,tags:[tag||'star'],priority:prio||4,click:'https://center3m.github.io/'})})}
+function pingAdmin(doc){try{var t=(D().site||{}).ntfy;if(!t||D().site.ntfyRate===false)return;var st='';for(var i=1;i<=5;i++)st+=i<=doc.stars?'★':'☆';
   ntfySend(t,'⭐ تقييم جديد على سنتر 3M',st+'  ('+doc.stars+' من 5)'+(doc.grade?'\n'+doc.grade:'')+(doc.text?'\n💬 فيه تعليق':'')+'\nافتح «آراء أولياء الأمور» عشان تشوف التفاصيل').catch(function(){})}catch(e){}}
+function changeSummary(oldIds,codes){var L=[];
+  var olds={};(STATE.uploads||[]).forEach(function(u){olds[u.id]=u});
+  (S.uploads||[]).forEach(function(u){if(!oldIds[u.id])L.push('📄 رفع: '+u.file+(u.count!=null?' ('+u.count+' تسجيل)':'')+(u.range?' · '+u.range:''));else if(u.deleted&&olds[u.id]&&!olds[u.id].deleted)L.push('🗑️ حذف يوم: '+u.file+(u.range?' · '+u.range:''))});
+  var add=0,del=0,att=0,ex=0,info=0;
+  Object.keys(codes).forEach(function(c){var a=studentDoc(S,c),b=studentDoc(STATE,c);if(a&&!b)add++;else if(!a&&b)del++;else if(a&&b){if(stable(a.att||{})!==stable(b.att||{}))att++;if(stable(a.ex||{})!==stable(b.ex||{}))ex++;if(['name','grade','group','phone'].some(function(k){return (a[k]||'')!==(b[k]||'')}))info++}});
+  var newUp=(S.uploads||[]).some(function(u){return !oldIds[u.id]});
+  if(!newUp&&att)L.push('✅ تعديل حضور/غياب لـ '+att+' طالب');
+  if(!newUp&&ex)L.push('📝 تعديل درجات لـ '+ex+' طالب');
+  if(add)L.push('➕ إضافة '+add+' طالب');if(del)L.push('❌ حذف '+del+' طالب');if(info)L.push('✏️ تعديل بيانات '+info+' طالب');
+  if(stable(siteDoc(S))!==stable(siteDoc(STATE)))L.push('⚙️ تعديل في إعدادات أو محتوى الموقع');
+  if(!L.length)L.push('تعديلات متنوعة');return L}
+function pingStaff(L){try{var st=STATE.site||{};if(!st.ntfy||st.ntfyStaff===false)return;
+  ntfySend(st.ntfy,'👤 '+(me.name||me.u)+' عدّل على الموقع',L.slice(0,8).join('\n')+'\n🕒 '+fmtClock(Date.now()),3,'memo').catch(function(){})}catch(e){}}
 function ntfyHtml(){var t=S.site.ntfy||'';
-  var h='<div class="card ntfy-box"><b>'+ic('alert',16)+' إشعار على موبايلك مع كل تقييم</b>';
-  if(!t)return h+'<p class="hint">أول ما أي ولي أمر يقيّم، يوصلك إشعار على تليفونك فورًا (مجانًا).</p><button class="btn main sm" data-act="ntfyOn">تفعيل الإشعارات</button></div>';
+  var h='<div class="card ntfy-box"><b>'+ic('alert',16)+' إشعارات على موبايلك</b>';
+  if(!t)return h+'<p class="hint">يوصلك إشعار على تليفونك فورًا (مجانًا) لما ولي أمر يقيّم، أو لما موظف يرفع غياب أو يعدّل حاجة.</p><button class="btn main sm" data-act="ntfyOn">تفعيل الإشعارات</button></div>';
   h+='<ol class="ntfy-steps"><li>نزّل تطبيق <b>ntfy</b> من Google Play أو App Store (مجاني).</li><li>افتحه ودوس <b>+</b> واكتب اسم القناة ده بالظبط:<div class="row" style="margin-top:6px"><code class="ntfy-topic" dir="ltr">'+esc(t)+'</code><button class="btn plain sm" data-act="ntfyCopy">نسخ</button></div></li><li>دوس <b>حفظ</b> تحت عشان التفعيل يتسجل، وبعدها جرّب.</li></ol>';
-  return h+'<div class="row"><button class="btn main sm" data-act="ntfyTest">جرّب إشعار دلوقتي</button><button class="btn plain sm" data-act="ntfyOff">إيقاف الإشعارات</button></div><p class="hint">الإشعار فيه النجوم والمرحلة بس، واسم الطالب والتعليق بيظهروا هنا جوه الموقع. متشاركش اسم القناة مع حد.</p></div>'}
+  h+='<div class="ntfy-opts"><label class="chk"><input type="checkbox" id="ntfyRate"'+(S.site.ntfyRate!==false?' checked':'')+'> لما ولي أمر يقيّم</label><label class="chk"><input type="checkbox" id="ntfyStaff"'+(S.site.ntfyStaff!==false?' checked':'')+'> لما موظف يرفع غياب أو يعدّل حاجة</label></div>';
+  return h+'<div class="row"><button class="btn main sm" data-act="ntfyTest">جرّب إشعار دلوقتي</button><button class="btn plain sm" data-act="ntfyOff">إيقاف الإشعارات</button></div><p class="hint">إشعار التقييم فيه النجوم والمرحلة بس، واسم الطالب والتعليق بيظهروا هنا جوه الموقع. متشاركش اسم القناة مع حد.</p></div>'}
 function loadRatings(){return db.collection('ratings').orderBy('ts','desc').limit(500).get().then(function(qs){var L=[];qs.forEach(function(d){var x=d.data();x.id=d.id;L.push(x)});RATINGS=L;ratingsErr='';if(adminTab==='ratings')render()}).catch(function(e){ratingsErr=e&&e.code==='permission-denied'?'rules':'err';if(adminTab==='ratings')render()})}
 var ratFilter=0;
 function tsDate(t){try{var d=t&&t.toDate?t.toDate():(typeof t==='number'?new Date(t):null);if(!d)return '';return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}catch(e){return ''}}
@@ -2120,6 +2134,7 @@ document.addEventListener('change',function(e){
   if(t.dataset.uactive){var au=S.users.find(function(x){return x.id===t.dataset.uactive});if(au){if(!t.checked&&au.role==='admin'&&adminCount()<=1){t.checked=true;toast('لازم يفضل أدمن واحد على الأقل');return}au.active=t.checked;markDirty();render()}return}
   if(t.dataset.urole){var ru=S.users.find(function(x){return x.id===t.dataset.urole});if(ru){if(t.value!=='admin'&&ru.role==='admin'&&adminCount()<=1){t.value='admin';toast('لازم يفضل أدمن واحد على الأقل');return}ru.role=t.value;if(ru.role==='admin')ru.perms=PERMS.map(function(p){return p[0]});markDirty();render()}return}
   if(t.id==='liveCount'){S.site.liveCount=t.checked;markDirty();render();return}
+  if(t.id==='ntfyRate'||t.id==='ntfyStaff'){S.site[t.id]=t.checked;markDirty();render();return}
   if(t.id==='liveStyle'){S.site.liveStyle=t.value;markDirty();render();return}
   if(t.id==='liveMin'){S.site.liveMin=+t.value;markDirty();render();return}
   if(t.id==='absLimit'){S.site.absLimit=+t.value;markDirty();render();return}
@@ -2205,10 +2220,11 @@ function save(){
   var newIds={};(S.uploads||[]).forEach(function(u){newIds[u.id]=1});
   (STATE.uploads||[]).forEach(function(u){if(!newIds[u.id])ops.push(function(b){b.delete(db.collection('uploads').doc(u.id))})});
   if(!ops.length){saving=false;dirty=false;render();toast('مفيش تغييرات');return}
+  var staffNote=(me.role!=='admin')?changeSummary(oldIds,codes):null;
   var chunks=[],cur=[];ops.forEach(function(f){if(f.big){chunks.push([f]);return}cur.push(f);if(cur.length>=15){chunks.push(cur);cur=[]}});if(cur.length)chunks.push(cur);if(chunks.length>3)toast('جاري الحفظ… ('+ops.length+' تغيير)');
   var done=0;
   chunks.reduce(function(pr,ch){return pr.then(function(){var b=db.batch();ch.forEach(function(f){f(b)});return b.commit().then(function(){done+=ch.length})})},Promise.resolve())
-  .then(function(){STATE=clone(S);saving=false;dirty=false;render();toast('اتحفظ، وظهر لأولياء الأمور')})
+  .then(function(){STATE=clone(S);saving=false;dirty=false;render();toast('اتحفظ، وظهر لأولياء الأمور');if(staffNote)pingStaff(staffNote)})
   .catch(function(e){saving=false;render();toast(fbErr(e)+(done?' — اتحفظ جزء ('+done+' من '+ops.length+')، دوس حفظ تاني':''))});
 }
 
