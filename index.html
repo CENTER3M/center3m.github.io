@@ -1302,14 +1302,15 @@ function cdWhen(n){return n===0?'النهارده':n===1?'بكره':n===2?'بع�
 function cdList(d,stu){if(d.site.exCd===false)return [];var td=today();return (d.site.exUp||[]).filter(function(e){return e&&e.title&&e.date&&e.date>=td&&(!e.stage||(stu&&stu.grade===e.stage))}).sort(function(a,b){return (a.date+(a.time||'')).localeCompare(b.date+(b.time||''))}).slice(0,3)}
 function cdHtml(d,stu){var L=cdList(d,stu);if(!L.length)return '';var td=today();
   return '<section class="cd">'+L.map(function(e){var n=dayDiff(e.date,td);return '<div class="cd-item'+(n<=1?' soon':'')+'"><div class="cd-num"><b class="num">'+(n<=2?(n===0?'🔔':n):n)+'</b><small>'+(n===0?'النهارده':n===1?'يوم':n===2?'يوم':n<=10?'أيام':'يوم')+'</small></div><div class="cd-txt"><b>📝 '+esc(e.title)+' '+cdWhen(n)+'</b><small class="num">'+dayName(e.date)+' '+fmtD(e.date)+(e.time?' · الساعة '+fmt12(e.time):'')+(e.stage?' · '+esc(e.stage):'')+'</small></div></div>'}).join('')+'</section>'}
-function cdAdmin(){var s=S.site;s.exUp=s.exUp||[];var td=today();
+function cdAdmin(){if(!canSiteEdit())return '';var s=S.site;var td=today();
   var h='<div class="opt-box"><div class="row" style="justify-content:space-between"><b>'+ic('clock',16)+' العدّاد التنازلي للامتحانات</b><label class="chk"><input type="checkbox" id="exCd"'+(s.exCd!==false?' checked':'')+'> يظهر لأولياء الأمور</label></div>';
   h+='<p class="hint">اكتب الامتحان الجاي وميعاده، وهيظهر لولي الأمر "امتحان … بعد 3 أيام". بيختفي لوحده بعد ميعاده.</p>';
   h+='<div class="row"><div class="field" style="flex:2 1 200px"><label for="cdT">اسم الامتحان</label><input type="text" id="cdT" placeholder="مثلاً: امتحان شهر أكتوبر"></div><div class="field" style="flex:1 1 140px"><label for="cdD">التاريخ</label><input type="date" id="cdD" value="'+td+'"></div><div class="field" style="flex:1 1 110px"><label for="cdTm">الساعة (اختياري)</label><input type="time" id="cdTm"></div><div class="field" style="flex:1 1 170px"><label for="cdS">لمين</label>'+stageSel('id="cdS"','','كل المراحل')+'</div><button class="btn acc" data-act="addCd" style="align-self:flex-end">'+ic('plus',16)+' إضافة</button></div>';
-  var L=s.exUp.slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'')});
+  var L=(s.exUp||[]).slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'')});
   if(L.length){h+='<div class="list">';L.forEach(function(e){var past=e.date<td,n=past?0:dayDiff(e.date,td);h+='<div class="li"><div class="grow"><b>'+esc(e.title)+'</b><small class="num">'+dayName(e.date)+' '+fmtD(e.date)+(e.time?' · '+fmt12(e.time):'')+' · '+(e.stage?esc(e.stage):'كل المراحل')+'</small></div><span class="chip '+(past?'e':'p')+'">'+(past?'خلص':cdWhen(n))+'</span><button class="btn plain sm" data-act="rmCd" data-id="'+esc(e.id)+'" aria-label="حذف">'+ic('trash',14)+'</button></div>'});h+='</div>'}
   return h+'</div>'}
-function chartAdmin(){var on=S.site.exChart!==false;return '<div class="opt-box"><div class="row" style="justify-content:space-between"><b>'+ic('chart',16)+' الرسم البياني للدرجات</b><label class="chk"><input type="checkbox" id="exChart"'+(on?' checked':'')+'> يظهر لأولياء الأمور</label></div><p class="hint">بيظهر فوق درجات الطالب لما يبقى عنده امتحانين أو أكتر، ومعاه سهم بيوضح مستواه بيتحسن ولا محتاج متابعة.</p></div>'}
+function canSiteEdit(){return !!me&&(me.role==='admin'||(me.perms||[]).some(function(x){return x==='site'||x==='look'}))}
+function chartAdmin(){if(!canSiteEdit())return '';var on=S.site.exChart!==false;return '<div class="opt-box"><div class="row" style="justify-content:space-between"><b>'+ic('chart',16)+' الرسم البياني للدرجات</b><label class="chk"><input type="checkbox" id="exChart"'+(on?' checked':'')+'> يظهر لأولياء الأمور</label></div><p class="hint">بيظهر فوق درجات الطالب لما يبقى عنده امتحانين أو أكتر، ومعاه سهم بيوضح مستواه بيتحسن ولا محتاج متابعة.</p></div>'}
 /* ---- score trend chart ---- */
 function exChartHtml(d,L){if(d.site.exChart===false)return '';
   var P=L.filter(function(x){return x.s!=null&&x.m}).slice().sort(function(a,b){return (a.d||'').localeCompare(b.d||'')}).slice(-8).map(function(x){return {pc:Math.max(0,Math.min(100,Math.round(x.s/x.m*100))),t:x.t,d:x.d}});
@@ -1968,7 +1969,7 @@ function changeSummary(oldIds,codes){var L=[];
   if(!newUp&&att)L.push('✅ تعديل حضور/غياب لـ '+att+' طالب');
   if(!newUp&&ex)L.push('📝 تعديل درجات لـ '+ex+' طالب');
   if(add)L.push('➕ إضافة '+add+' طالب');if(del)L.push('❌ حذف '+del+' طالب');if(info)L.push('✏️ تعديل بيانات '+info+' طالب');
-  if(stable(siteDoc(S))!==stable(siteDoc(STATE)))L.push('⚙️ تعديل في إعدادات أو محتوى الموقع');
+  if(siteChanged()&&canSiteEdit())L.push('⚙️ تعديل في إعدادات أو محتوى الموقع');
   if(!L.length)L.push('تعديلات متنوعة');return L}
 function pingStaff(L){try{var st=STATE.site||{};if(!st.ntfy||st.ntfyStaff===false)return;
   ntfySend(st.ntfy,'👤 '+(me.name||me.u)+' عدّل على الموقع',L.slice(0,8).join('\n')+'\n🕒 '+fmtClock(Date.now()),3,'memo').catch(function(){})}catch(e){}}
@@ -2311,13 +2312,15 @@ function fieldDiff(a,b){var out=[],FP=firebase.firestore.FieldPath,DEL=firebase.
 
 function studentDoc(st,code){var s=(st.students||[]).find(function(x){return String(x.code)===String(code)});if(!s)return null;
   var o={code:String(s.code),name:s.name||'',grade:s.grade||'',group:s.group||'',phone:s.phone||'',att:(st.attendance||{})[s.code]||{}};var ex=(st.exams||{})[s.code];if(ex&&Object.keys(ex).length)o.ex=ex;return o}
+function pruneEmpty(v){if(Array.isArray(v))return v.map(pruneEmpty);if(v&&typeof v==='object'){var o={};Object.keys(v).forEach(function(k){var x=pruneEmpty(v[k]);if(Array.isArray(x)&&!x.length)return;if(x&&typeof x==='object'&&!Array.isArray(x)&&!Object.keys(x).length)return;o[k]=x});return o}return v}
+function siteChanged(){return stable(pruneEmpty(siteDoc(S)))!==stable(pruneEmpty(siteDoc(STATE)))}
 function siteDoc(st){return {logo:st.logo||'',site:st.site||{},grades:st.grades||[],delPin:st.delPin||'',mediaIdx:(st.media||[]).map(function(m){return {id:m.id,stage:m.stage||'',caption:m.caption||'',order:m.order||0}})}}
 function userDoc(u){return {name:u.name||'',u:u.u,role:u.role||'staff',perms:u.perms||[],active:u.active!==false}}
 function save(){
   if(!me){toast('لازم تدخل الأول');return}
   saving=true;render();
   var ops=[];
-  if(stable(siteDoc(S))!==stable(siteDoc(STATE)))ops.push(function(b){b.set(db.doc('settings/site'),siteDoc(S))});
+  if(siteChanged()&&canSiteEdit())ops.push(function(b){b.set(db.doc('settings/site'),siteDoc(S))});
   (S.media||[]).forEach(function(m){var o=(STATE.media||[]).find(function(x){return x.id===m.id});if(!o||stable(o)!==stable(m)){var f=function(b){b.set(db.doc('settings/img_'+m.id),{caption:m.caption||'',stage:m.stage||'',data:m.data,order:m.order||0})};f.big=true;ops.push(f)}});
   (STATE.media||[]).forEach(function(o){if(!(S.media||[]).some(function(m){return m.id===o.id}))ops.push(function(b){b.delete(db.doc('settings/img_'+o.id))})});
   var codes={};(S.students||[]).concat(STATE.students||[]).forEach(function(s){codes[String(s.code)]=1});
