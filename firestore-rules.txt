@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function canAny(perms) {
+      let p = profile();
+      return request.auth != null && p.active == true && (p.role == 'admin' || p.perms.hasAny(perms));
+    }
+    function isAdmin() {
+      let p = profile();
+      return request.auth != null && p.active == true && p.role == 'admin';
+    }
+    function isStaff() {
+      return request.auth != null && profile().active == true;
+    }
+
+    // First admin is created once; after that this document locks setup forever.
+    match /meta/setup {
+      allow get: if true;
+      allow create: if request.auth != null
+        && !exists(/databases/$(database)/documents/meta/setup)
+        && request.resource.data.owner == request.auth.uid;
+    }
+
+    // Logo, page texts, stages, contact numbers: everyone reads, admin edits.
+    match /settings/{doc} {
+      allow read: if true;
+      allow write: if canAny(['site', 'look']);
+    }
+
+    // Parents can open ONE student by its code, but cannot list all students.
+    match /students/{code} {
+      allow get: if true;
+      allow list: if isStaff();
+      allow create, update: if canAny(['upload', 'att', 'stu', 'del', 'backup']);
+      allow delete: if canAny(['stu']);
+    }
+
+    // Staff accounts: each person reads their own, admin manages all.
+    match /users/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow create: if (request.auth != null
+            && request.auth.uid == uid
+            && request.resource.data.role == 'admin'
+            && !exists(/databases/$(database)/documents/meta/setup)
+            && getAfter(/databases/$(database)/documents/meta/setup).data.owner == uid)
+        || isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // Upload history.
+    match /uploads/{id} {
+      allow read, create: if isStaff();
+      allow delete: if canAny(['del']);
+    }
+
+    // Visit counter: anyone can add +1; the numbers (no names) are shown to parents.
+    match /stats/{id} {
+      function plusOne(k) {
+        return !(request.resource.data.diff(resource.data).affectedKeys().hasAny([k]))
+          || request.resource.data[k] == resource.data.get(k, 0) + 1;
+      }
+      allow read: if true;
+      allow create: if (id == 'total' || id.matches('d_[0-9]{4}-[0-9]{2}-[0-9]{2}'))
+        && request.resource.data.keys().hasOnly(['v', 'q'])
+        && request.resource.data.get('v', 1) == 1 && request.resource.data.get('q', 1) == 1;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['v', 'q'])
+        && plusOne('v') && plusOne('q');
+    }
+
+    // Parents' ratings: anyone can send one, only the admin can read or delete them.
+    match /ratings/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['stars', 'text', 'grade', 'code', 'name', 'group', 'ts'])
+        && request.resource.data.stars is int
+        && request.resource.data.stars >= 1 && request.resource.data.stars <= 5
+        && request.resource.data.text is string && request.resource.data.text.size() <= 500
+        && request.resource.data.grade is string && request.resource.data.grade.size() <= 60
+        && (!('code' in request.resource.data) || (request.resource.data.code is string && request.resource.data.code.size() <= 20))
+        && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() <= 80))
+        && (!('group' in request.resource.data) || (request.resource.data.group is string && request.resource.data.group.size() <= 40))
+        && request.resource.data.ts == request.time;
+      allow read, delete: if isAdmin();
+    }
+
+    // Parents' private suggestions: anyone can send one, ONLY the admin can read or delete them.
+    match /suggestions/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['text', 'contact', 'code', 'name', 'grade', 'ts'])
+        && request.resource.data.text is string && request.resource.data.text.size() >= 3 && request.resource.data.text.size() <= 1000
+        && request.resource.data.contact is string && request.resource.data.contact.size() <= 80
+        && request.resource.data.code is string && request.resource.data.code.size() <= 20
+        && request.resource.data.name is string && request.resource.data.name.size() <= 80
+        && request.resource.data.grade is string && request.resource.data.grade.size() <= 60
+        && request.resource.data.ts == request.time;
+      allow read, delete: if isAdmin();
+    }
+
+    // Parents who saved their child's code on their phone: anyone can record it, only the admin can read.
+    match /saves/{code} {
+      allow create, update: if request.resource.data.keys().hasOnly(['code', 'name', 'grade', 'ts'])
+        && request.resource.data.code == code && code.size() <= 20
+        && request.resource.data.name is string && request.resource.data.name.size() <= 80
+        && request.resource.data.grade is string && request.resource.data.grade.size() <= 60
+        && request.resource.data.ts == request.time;
+      allow read, delete: if isAdmin();
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
