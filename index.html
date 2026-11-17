@@ -2006,25 +2006,29 @@ function rateHtml(stu){
   if(rate.stars)h+='<button class="btn main" data-act="rateSend" '+(rate.busy?'disabled':'')+'>'+(rate.busy?'جاري الإرسال…':'إرسال التقييم')+'</button>';
   return h+'</section>';
 }
-var sugg={sent:false,busy:false,text:'',contact:''};
+var sugg={sent:false,busy:false,text:'',contact:'',code:''};
 function suggHtml(stu){if((D().site||{}).suggOff)return '';
   var h='<section class="sugg" id="suggBox"><div class="sugg-ic">'+ic('bulb',22)+'</div><h3>عندك اقتراح؟</h3>';
   if(sugg.sent)return h+'<p class="rate-thanks">'+ic('check',20)+' وصلنا اقتراحك، شكرًا إنك بتساعدنا نتطوّر 🌟</p><button class="btn plain sm" data-act="suggAgain">اقتراح تاني</button></section>';
   h+='<p class="hint">اكتب أي فكرة أو ملاحظة تحب نعملها في السنتر أو الموقع.</p><p class="sugg-lock">'+ic('lock',14)+' اقتراحك بيوصل للإدارة بس، ومحدش من أولياء الأمور بيشوفه.</p>';
   h+='<div class="field"><label for="suggTxt">اقتراحك</label><textarea id="suggTxt" maxlength="1000" placeholder="اكتب اقتراحك هنا…">'+esc(sugg.text)+'</textarea></div>';
+  h+='<div class="field"><label for="suggCode">كود ابنك أو بنتك</label><input type="text" id="suggCode" class="num" inputmode="numeric" dir="ltr" maxlength="20" placeholder="مثلًا 1234" value="'+esc(sugg.code||(stu&&stu.code)||'')+'"></div>';
   h+='<div class="field"><label for="suggWho">اسمك أو رقمك (اختياري، لو حابب نرد عليك)</label><input type="text" id="suggWho" maxlength="80" value="'+esc(sugg.contact)+'"></div>';
   return h+'<button class="btn acc" data-act="suggSend" '+(sugg.busy?'disabled':'')+'>'+(sugg.busy?'جاري الإرسال…':'ابعت الاقتراح')+'</button></section>'}
 function refreshSugg(){var el=document.getElementById('suggBox');if(!el)return;var w=document.createElement('div');w.innerHTML=suggHtml(curStu());el.replaceWith(w.firstChild)}
-function sendSugg(){var tx=val('suggTxt').trim().slice(0,1000),who=val('suggWho').trim().slice(0,80),stu=curStu();sugg.text=tx;sugg.contact=who;
+function sendSugg(){var tx=val('suggTxt').trim().slice(0,1000),who=val('suggWho').trim().slice(0,80),code=digits(val('suggCode')).replace(/\s+/g,'').trim().slice(0,20),stu=curStu();sugg.text=tx;sugg.contact=who;sugg.code=code;
   if(tx.length<3){toast('اكتب اقتراحك الأول');return}
+  if(!code){toast('اكتب كود ابنك أو بنتك');var ci=document.getElementById('suggCode');if(ci)ci.focus();return}
   sugg.busy=true;refreshSugg();
-  var doc={text:tx,contact:who,code:String((stu&&stu.code)||'').slice(0,20),name:String((stu&&stu.name)||'').slice(0,80),grade:String((stu&&stu.grade)||'').slice(0,60),ts:firebase.firestore.FieldValue.serverTimestamp()};
-  db.collection('suggestions').add(doc).then(function(){pingSugg(doc);sugg={sent:true,busy:false,text:'',contact:''};refreshSugg()})
+  var known=stu&&String(stu.code)===code?Promise.resolve(stu):db.collection('students').doc(code).get().then(function(sn){return sn.exists?{code:code,name:sn.data().name||'',grade:sn.data().grade||''}:null}).catch(function(){return null});
+  known.then(function(st){
+  var doc={text:tx,contact:who,code:code,name:String((st&&st.name)||'').slice(0,80),grade:String((st&&st.grade)||'').slice(0,60),ts:firebase.firestore.FieldValue.serverTimestamp()};
+  return db.collection('suggestions').add(doc).then(function(){return doc})}).then(function(doc){pingSugg(doc);sugg={sent:true,busy:false,text:'',contact:'',code:''};refreshSugg()})
   .catch(function(){sugg.busy=false;refreshSugg();toast('مقدرناش نبعت الاقتراح دلوقتي، جرب تاني بعد شوية')})}
 function pingSugg(doc){try{var st=D().site||{};if(!st.ntfy||st.ntfySugg===false)return;ntfySend(st.ntfy,'💡 اقتراح جديد على سنتر 3M',(doc.grade?doc.grade+'\n':'')+'افتح «الاقتراحات» في الإعدادات عشان تقراه',3,'bulb').catch(function(){})}catch(e){}}
 var SUGGS=null,suggErr='';
 function loadSuggs(){return db.collection('suggestions').orderBy('ts','desc').limit(500).get().then(function(qs){var L=[];qs.forEach(function(d){var x=d.data();x.id=d.id;L.push(x)});SUGGS=L;suggErr='';if(adminTab==='sugg')render()}).catch(function(e){suggErr=e&&e.code==='permission-denied'?'rules':'err';if(adminTab==='sugg')render()})}
-function pSugg(){var h='<h3>'+ic('bulb',18)+' الاقتراحات</h3><p class="hint">اقتراحات أولياء الأمور من آخر الصفحة. بتظهرلك إنت بس، ومحدش من أولياء الأمور بيشوف اقتراح غيره.</p>';
+function pSugg(){var h='<h3>'+ic('bulb',18)+' الاقتراحات</h3><p class="hint">اقتراحات أولياء الأمور من الصفحة الرئيسية. بتظهرلك إنت بس، ومحدش من أولياء الأمور بيشوف اقتراح غيره.</p>';
   h+='<label class="chk"><input type="checkbox" id="suggOn"'+(S.site.suggOff?'':' checked')+'> اعرض خانة الاقتراحات لأولياء الأمور</label>';
   if(suggErr==='rules')return h+'<div class="warn">لازم تحدّث قواعد Firebase (Rules) الأول عشان الاقتراحات تشتغل.</div><button class="btn plain sm" data-act="reloadSugg">جرب تاني</button>';
   if(suggErr)return h+'<div class="msg err">مقدرتش أجيب الاقتراحات. اتأكد من النت.</div><button class="btn plain sm" data-act="reloadSugg">جرب تاني</button>';
@@ -2032,7 +2036,7 @@ function pSugg(){var h='<h3>'+ic('bulb',18)+' الاقتراحات</h3><p class=
   if(!SUGGS.length)return h+'<div class="msg info">لسه مفيش اقتراحات.</div>';
   h+='<div class="row" style="justify-content:space-between"><b>'+SUGGS.length+' اقتراح</b><button class="btn plain sm" data-act="reloadSugg">'+ic('refresh',14)+' تحديث</button></div><div class="list">';
   SUGGS.forEach(function(x){var ms=x.ts&&x.ts.toMillis?x.ts.toMillis():(typeof x.ts==='number'?x.ts:0),dd=tsDate(x.ts);var ph=digits(x.contact||'').replace(/\D/g,'');
-    h+='<div class="li sugg-item"><div class="grow"><p class="sugg-text">'+esc(x.text)+'</p><small class="hint">'+[x.contact?(ph.length>=10?'<a href="tel:'+ph+'" dir="ltr">'+esc(x.contact)+'</a>':esc(x.contact)):'',x.name?esc(x.name)+(x.code?' · كود '+esc(x.code):''):'',x.grade?esc(x.grade):''].filter(Boolean).join(' · ')+'</small><small class="num rat-when">'+ic('clock',13)+' '+(dd?dayName(dd)+' '+fmtD(dd):'')+(ms?' · الساعة '+fmtClock(ms):'')+'</small></div><button class="btn plain sm" data-act="rmSugg" data-id="'+esc(x.id)+'" aria-label="حذف">'+ic('trash',14)+'</button></div>'});
+    h+='<div class="li sugg-item"><div class="grow"><p class="sugg-text">'+esc(x.text)+'</p><small class="hint">'+[x.contact?(ph.length>=10?'<a href="tel:'+ph+'" dir="ltr">'+esc(x.contact)+'</a>':esc(x.contact)):'',x.name?esc(x.name)+(x.code?' · كود '+esc(x.code):''):(x.code?'كود '+esc(x.code)+' (مش موجود)':''),x.grade?esc(x.grade):''].filter(Boolean).join(' · ')+'</small><small class="num rat-when">'+ic('clock',13)+' '+(dd?dayName(dd)+' '+fmtD(dd):'')+(ms?' · الساعة '+fmtClock(ms):'')+'</small></div><button class="btn plain sm" data-act="rmSugg" data-id="'+esc(x.id)+'" aria-label="حذف">'+ic('trash',14)+'</button></div>'});
   return h+'</div>'}
 function refreshRate(){var el=document.getElementById('rateBox');if(!el)return;var w=document.createElement('div');w.innerHTML=rateHtml(curStu());el.replaceWith(w.firstChild)}
 function sendRate(){
@@ -2254,7 +2258,7 @@ document.addEventListener('click',function(e){
   if(a==='rateStar'){var ta=document.getElementById('rateTxt');if(ta)rate.text=ta.value;rate.stars=+t.dataset.n;refreshRate();return}
   if(a==='rateSend')return sendRate();
   if(a==='suggSend')return sendSugg();
-  if(a==='suggAgain'){sugg={sent:false,busy:false,text:'',contact:''};refreshSugg();return}
+  if(a==='suggAgain'){sugg={sent:false,busy:false,text:'',contact:'',code:''};refreshSugg();return}
   if(a==='reloadSugg'){SUGGS=null;suggErr='';render();return}
   if(a==='rmSugg'){var sgid=t.dataset.id;db.collection('suggestions').doc(sgid).delete().then(function(){SUGGS=(SUGGS||[]).filter(function(r){return r.id!==sgid});render();toast('اتحذف الاقتراح')}).catch(function(){toast('مقدرتش أحذفه')});return}
   if(a==='rateAgain'){rate={stars:0,sent:false,busy:false,text:''};refreshRate();return}
